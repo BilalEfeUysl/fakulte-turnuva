@@ -1,0 +1,23 @@
+Fakulte Turnuva — geliştirme ortamı (macOS)
+
+"npm: komut bulunamadı" hatası: bilgisayarda Node.js (içinde npm) kurulu değil veya PATH’e ekli değil.
+
+Seçenek A — Homebrew (önerilen)
+  1) Terminal:  brew --version
+     Çalışmıyorsa: https://brew.sh adresinden Homebrew kurun.
+  2) Node kurun:  brew install node
+  3) Doğrulayın:  node -v   ve   npm -v
+
+Seçenek B — Resmi kurulum
+  https://nodejs.org adresinden LTS indirip yükleyin. Kurulumdan sonra Terminal’i kapatıp açın.
+
+Seçenek C — fnm veya nvm (sürüm yönetimi)
+  fnm:  brew install fnm  →  kurulum talimatlarını fnm ekranda gösterir
+  nvm:  https://github.com/nvm-sh/nvm
+
+Tauri için ayrıca Rust gerekir: https://rustup.rs
+
+Proje klasöründe:
+  cd fakulte-turnuva
+  npm install
+  npm run tauri dev
