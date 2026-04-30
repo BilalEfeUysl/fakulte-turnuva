@@ -45,12 +45,12 @@ export function useTournamentApp() {
   const [drawRunning, setDrawRunning] = useState(false);
   const [adjustingGroups, setAdjustingGroups] = useState(false);
   const [planningSchedule, setPlanningSchedule] = useState(false);
+  const [leagueDrawCompleted, setLeagueDrawCompleted] = useState(true);
 
   const [teamPendingDelete, setTeamPendingDelete] = useState<PendingTeamDelete | null>(null);
   const [memberPendingDelete, setMemberPendingDelete] = useState<PendingMemberDelete | null>(null);
 
   const [formName, setFormName] = useState("");
-  const [formFaculty, setFormFaculty] = useState("");
   const [formNotes, setFormNotes] = useState("");
   const [editTeamId, setEditTeamId] = useState<number | null>(null);
 
@@ -166,21 +166,18 @@ export function useTournamentApp() {
   const startEditTeam = useCallback((t: Team) => {
     setEditTeamId(t.id);
     setFormName(t.name);
-    setFormFaculty(t.faculty_name);
     setFormNotes(t.notes);
   }, []);
 
   const cancelEdit = useCallback(() => {
     setEditTeamId(null);
     setFormName("");
-    setFormFaculty("");
     setFormNotes("");
   }, []);
 
   const clearTeamForm = useCallback(() => {
     setEditTeamId(null);
     setFormName("");
-    setFormFaculty("");
     setFormNotes("");
   }, []);
 
@@ -189,19 +186,18 @@ export function useTournamentApp() {
       e.preventDefault();
       setError(null);
       const name = formName.trim();
-      const faculty = formFaculty.trim();
-      if (!name || !faculty) {
-        setError("Takım adı ve fakülte zorunludur.");
+      if (!name) {
+        setError("Takım adı zorunludur.");
         return;
       }
       const notes = formNotes.trim();
       setSavingTeam(true);
       try {
         if (editTeamId != null) {
-          await teamsApi.updateTeam({ id: editTeamId, name, facultyName: faculty, notes });
+          await teamsApi.updateTeam({ id: editTeamId, name, facultyName: name, notes });
           setSuccessMessage("Takım güncellendi.");
         } else {
-          await teamsApi.createTeam({ name, facultyName: faculty, notes });
+          await teamsApi.createTeam({ name, facultyName: name, notes });
           setSuccessMessage("Takım oluşturuldu.");
         }
         cancelEdit();
@@ -212,7 +208,7 @@ export function useTournamentApp() {
         setSavingTeam(false);
       }
     },
-    [cancelEdit, editTeamId, formFaculty, formName, formNotes, loadAll],
+    [cancelEdit, editTeamId, formName, formNotes, loadAll],
   );
 
   const askDeleteTeam = useCallback((team: Team) => {
@@ -373,6 +369,43 @@ export function useTournamentApp() {
     }
   }, [loadAll]);
 
+  const runLeagueDrawAction = useCallback(
+    async (weeksCount: number) => {
+      setError(null);
+      setDrawRunning(true);
+      try {
+        await tournamentApi.runLeagueDraw({ weeksCount });
+        await loadAll();
+        setLeagueDrawCompleted(false);
+        setSuccessMessage("Lig fikstürü oluşturuldu.");
+      } catch (e) {
+        setError(String(e));
+      } finally {
+        setDrawRunning(false);
+      }
+    },
+    [loadAll],
+  );
+
+  const markLeagueDrawCompleted = useCallback(() => {
+    setLeagueDrawCompleted(true);
+  }, []);
+
+  const resetAllAction = useCallback(async () => {
+    setError(null);
+    setDrawRunning(true);
+    try {
+      await tournamentApi.resetAll();
+      setMatchSheetId(null);
+      await loadAll();
+      setSuccessMessage("Turnuva sıfırlandı. Takımlar korundu.");
+    } catch (e) {
+      setError(String(e));
+    } finally {
+      setDrawRunning(false);
+    }
+  }, [loadAll]);
+
   const updateDailyLimit = useCallback(async (groupId: number, dailyLimit: number) => {
     setPlanningSchedule(true);
     setError(null);
@@ -405,6 +438,7 @@ export function useTournamentApp() {
       id: number;
       matchdayNo: number;
       scheduledDate: string | null;
+      scheduledTime?: string | null;
       calendarSlot: number;
     }) => {
       setPlanningSchedule(true);
@@ -412,6 +446,7 @@ export function useTournamentApp() {
       try {
         await matchApi.updateMatchSchedule(input);
         setMatches(await matchApi.listMatches());
+        setSuccessMessage("Tarih ve saat başarıyla güncellendi!");
       } catch (e) {
         setError(String(e));
       } finally {
@@ -469,6 +504,22 @@ export function useTournamentApp() {
     },
     [loadAll, matchSheetId],
   );
+
+  const resetMatchAction = useCallback(async () => {
+    if (matchSheetId == null) return;
+    setError(null);
+    setSavingMatch(true);
+    try {
+      await matchApi.resetMatch(matchSheetId);
+      setSuccessMessage("Maç başarıyla sıfırlandı.");
+      setMatchEvents([]);
+      await loadAll();
+    } catch (e) {
+      setError(String(e));
+    } finally {
+      setSavingMatch(false);
+    }
+  }, [loadAll, matchSheetId]);
 
   const removeEvent = useCallback(
     async (id: number) => {
@@ -533,12 +584,12 @@ export function useTournamentApp() {
     drawRunning,
     adjustingGroups,
     planningSchedule,
+    leagueDrawCompleted,
+    markLeagueDrawCompleted,
     teamPendingDelete,
     memberPendingDelete,
     formName,
     setFormName,
-    formFaculty,
-    setFormFaculty,
     formNotes,
     setFormNotes,
     editTeamId,
@@ -562,6 +613,8 @@ export function useTournamentApp() {
     cancelDeleteMember,
     confirmDeleteMember,
     runDrawAction,
+    runLeagueDrawAction,
+    resetAllAction,
     moveGroupTeam,
     regenerateFixturesAction,
     updateDailyLimit,
@@ -583,6 +636,7 @@ export function useTournamentApp() {
     loadingMatchEvents,
     savingMatch,
     saveMatchScores,
+    resetMatchAction,
     addEvent,
     removeEvent,
     loadAll,

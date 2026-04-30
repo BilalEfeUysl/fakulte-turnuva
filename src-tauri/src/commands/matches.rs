@@ -5,11 +5,7 @@ use crate::models::{
 };
 use rusqlite::params;
 
-#[derive(serde::Deserialize)]
-#[serde(rename_all = "camelCase")]
-pub struct MatchIdArg {
-    pub match_id: i64,
-}
+
 
 #[tauri::command]
 pub fn list_matches(db: tauri::State<DbConn>) -> Result<Vec<MatchRow>, String> {
@@ -17,15 +13,16 @@ pub fn list_matches(db: tauri::State<DbConn>) -> Result<Vec<MatchRow>, String> {
     let mut stmt = conn
         .prepare(
             "SELECT m.id, m.group_id, g.name, m.stage, m.stage_slot, m.home_team_id, m.away_team_id, \
-             th.name, ta.name, m.match_order, m.matchday_no, m.scheduled_date, m.calendar_slot, \
+             th.name, ta.name, m.match_order, m.matchday_no, m.scheduled_date, m.scheduled_time, m.calendar_slot, \
              m.status, m.home_score, m.away_score, m.played_at \
              FROM matches m \
              JOIN groups g ON g.id = m.group_id \
              JOIN teams th ON th.id = m.home_team_id \
              JOIN teams ta ON ta.id = m.away_team_id \
              ORDER BY
-             CASE m.stage WHEN 'group' THEN 0 WHEN 'semi' THEN 1 ELSE 2 END,
+             CASE m.stage WHEN 'league' THEN 0 WHEN 'group' THEN 0 WHEN 'semi' THEN 1 ELSE 2 END,
              COALESCE(m.scheduled_date, '9999-12-31'),
+             COALESCE(m.scheduled_time, '23:59'),
              m.matchday_no, m.calendar_slot, g.sort_order, m.match_order, m.id",
         )
         .map_err(|e| e.to_string())?;
@@ -44,11 +41,12 @@ pub fn list_matches(db: tauri::State<DbConn>) -> Result<Vec<MatchRow>, String> {
                 match_order: row.get(9)?,
                 matchday_no: row.get(10)?,
                 scheduled_date: row.get(11)?,
-                calendar_slot: row.get(12)?,
-                status: row.get(13)?,
-                home_score: row.get(14)?,
-                away_score: row.get(15)?,
-                played_at: row.get(16)?,
+                scheduled_time: row.get(12)?,
+                calendar_slot: row.get(13)?,
+                status: row.get(14)?,
+                home_score: row.get(15)?,
+                away_score: row.get(16)?,
+                played_at: row.get(17)?,
             })
         })
         .map_err(|e| e.to_string())?;
@@ -68,22 +66,20 @@ pub fn update_match_schedule(
         return Err("Maç günü ve slot negatif olamaz.".into());
     }
     let conn = db.0.lock().map_err(|e| e.to_string())?;
-    let n = conn
+    let _n = conn
         .execute(
             "UPDATE matches
-             SET matchday_no = ?1, scheduled_date = ?2, calendar_slot = ?3
-             WHERE id = ?4",
+             SET matchday_no = ?1, scheduled_date = ?2, scheduled_time = ?3, calendar_slot = ?4
+             WHERE id = ?5",
             params![
                 payload.matchday_no,
                 payload.scheduled_date,
+                payload.scheduled_time,
                 payload.calendar_slot,
                 payload.id
             ],
         )
         .map_err(|e| e.to_string())?;
-    if n == 0 {
-        return Err("Maç bulunamadı.".into());
-    }
     Ok(())
 }
 
@@ -97,16 +93,13 @@ pub fn update_match(db: tauri::State<DbConn>, payload: UpdateMatchPayload) -> Re
         return Err("Skor negatif olamaz.".into());
     }
     let conn = db.0.lock().map_err(|e| e.to_string())?;
-    let n = conn
+    let _n = conn
         .execute(
             "UPDATE matches SET home_score = ?1, away_score = ?2, status = ?3, \
              played_at = IIF(?3 = 'finished', datetime('now', 'localtime'), NULL) WHERE id = ?4",
             params![payload.home_score, payload.away_score, st, payload.id],
         )
         .map_err(|e| e.to_string())?;
-    if n == 0 {
-        return Err("Maç bulunamadı.".into());
-    }
     maybe_generate_final(&conn)?;
     Ok(())
 }
@@ -145,19 +138,26 @@ fn maybe_generate_final(conn: &rusqlite::Connection) -> Result<(), String> {
             ))
         })
         .map_err(|e| e.to_string())?;
-    let mut winners = Vec::new();
+    let mut winners: Vec<Option<i64>> = Vec::new();
     let mut group_id = 0i64;
     for r in rows {
         let (gid, h, a, hs, aws) = r.map_err(|e| e.to_string())?;
         group_id = gid;
-        let winner = if hs >= aws { h } else { a };
+        let winner = if hs > aws {
+            Some(h)
+        } else if aws > hs {
+            Some(a)
+        } else {
+            // Berabere => finalist henüz belirlenmez
+            None
+        };
         winners.push(winner);
     }
-    if winners.len() == 2 {
+    if winners.len() == 2 && winners[0].is_some() && winners[1].is_some() {
         conn.execute(
             "INSERT INTO matches (group_id, home_team_id, away_team_id, stage, stage_slot, match_order, status)
              VALUES (?1, ?2, ?3, 'final', 'F', 1, 'scheduled')",
-            params![group_id, winners[0], winners[1]],
+            params![group_id, winners[0].unwrap(), winners[1].unwrap()],
         )
         .map_err(|e| e.to_string())?;
     }
@@ -213,7 +213,7 @@ pub fn add_match_event(
 #[tauri::command]
 pub fn list_match_events(
     db: tauri::State<DbConn>,
-    args: MatchIdArg,
+    match_id: i64,
 ) -> Result<Vec<MatchEventRow>, String> {
     let conn = db.0.lock().map_err(|e| e.to_string())?;
     let mut stmt = conn
@@ -226,7 +226,7 @@ pub fn list_match_events(
         )
         .map_err(|e| e.to_string())?;
     let rows = stmt
-        .query_map(params![args.match_id], |row| {
+        .query_map(params![match_id], |row| {
             Ok(MatchEventRow {
                 id: row.get(0)?,
                 match_id: row.get(1)?,
@@ -254,5 +254,23 @@ pub fn delete_match_event(db: tauri::State<DbConn>, payload: DeleteEventPayload)
     if n == 0 {
         return Err("Kayıt bulunamadı.".into());
     }
+    Ok(())
+}
+#[tauri::command]
+pub fn reset_match(db: tauri::State<DbConn>, match_id: i64) -> Result<(), String> {
+    let conn = db.0.lock().map_err(|e| e.to_string())?;
+    
+    // Skorları sıfırla ve durumu 'scheduled' yap
+    conn.execute(
+        "UPDATE matches SET home_score = 0, away_score = 0, status = 'scheduled', played_at = NULL WHERE id = ?1",
+        params![match_id],
+    ).map_err(|e| e.to_string())?;
+
+    // Bu maça ait tüm olayları (gol, kart) sil
+    conn.execute(
+        "DELETE FROM match_events WHERE match_id = ?1",
+        params![match_id],
+    ).map_err(|e| e.to_string())?;
+
     Ok(())
 }

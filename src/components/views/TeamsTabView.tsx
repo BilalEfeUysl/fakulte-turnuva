@@ -18,10 +18,8 @@ export function TeamsTabView({ app }: Props) {
         <TeamFormPanel
           editTeamId={app.editTeamId}
           formName={app.formName}
-          formFaculty={app.formFaculty}
           formNotes={app.formNotes}
           onNameChange={app.setFormName}
-          onFacultyChange={app.setFormFaculty}
           onNotesChange={app.setFormNotes}
           onSubmit={app.submitTeam}
           onCancelEdit={app.cancelEdit}

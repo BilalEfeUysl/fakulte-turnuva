@@ -78,7 +78,9 @@ export function MembersPanel({
             </span>
             <div className="team-detail__text">
               <p className="team-detail__name">{selected.name}</p>
-              <p className="team-detail__faculty">{selected.faculty_name}</p>
+              {selected.faculty_name && selected.faculty_name !== selected.name ? (
+                <p className="team-detail__faculty">{selected.faculty_name}</p>
+              ) : null}
             </div>
           </div>
           <div className="row-actions members-toolbar">

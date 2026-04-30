@@ -3,28 +3,27 @@ import type { TournamentAppState } from "../../hooks/useTournamentApp";
 type Props = { app: TournamentAppState };
 
 export function StandingsView({ app }: Props) {
-  const { standings, hasDraw } = app;
+  const { standings, hasDraw, leagueDrawCompleted } = app;
 
-  if (!hasDraw || standings.length === 0) {
+  if (!hasDraw || !leagueDrawCompleted || standings.length === 0) {
     return (
       <div className="empty-state">
         <strong>Puan tablosu hazır değil</strong>
-        Kura sonrası en az bir maç oynanınca satırlar güncellenir. Bitmiş maçların skorlarını fikstürden
-        girin.
+        Kura bitince puan tablosu açılır.
       </div>
     );
   }
 
   return (
-    <div>
+    <div className="standings-view">
       <h2 style={{ margin: "0 0 1.25rem", fontSize: "1.35rem", fontWeight: 800 }}>Puan durumu</h2>
-      <p style={{ margin: "0 0 1.5rem", color: "var(--arena-muted)", maxWidth: "54ch" }}>
-        Sıralama ve eşitlik bozma: puan {" > "} ikili averaj {" > "} genel averaj {" > "} atılan gol.
+      <p style={{ margin: "0 0 1.5rem", color: "var(--arena-muted)" }}>
+        Sıralama ve eşitlik bozma: puan {" > "} GD (GF-GA) {" > "} GF (Atılan) {" > "} isim.
       </p>
       <div className="standings-wrap">
         {standings.map((g) => (
           <div key={g.group_id} className="standings-card">
-            <div className="standings-card__head">Grup {g.group_name}</div>
+            <div className="standings-card__head">{g.group_name === "Lig" ? "Lig" : `Grup ${g.group_name}`}</div>
             <table className="standings-table">
               <thead>
                 <tr>

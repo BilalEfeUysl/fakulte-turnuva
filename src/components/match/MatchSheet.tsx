@@ -9,8 +9,11 @@ export function MatchSheet({ app }: Props) {
   const {
     selectedMatch,
     closeMatch,
-    saveMatchScores,
+    updateMatchSchedule,
+    planningSchedule,
     savingMatch,
+    saveMatchScores,
+    resetMatchAction,
     matchEvents,
     loadingMatchEvents,
     addEvent,
@@ -22,16 +25,23 @@ export function MatchSheet({ app }: Props) {
   const [status, setStatus] = useState("scheduled");
   const [playerName, setPlayerName] = useState("");
   const [eventType, setEventType] = useState("goal");
-  const [minute, setMinute] = useState(0);
   const [teamSide, setTeamSide] = useState<"home" | "away">("home");
   const [homeMembers, setHomeMembers] = useState<TeamMember[]>([]);
   const [awayMembers, setAwayMembers] = useState<TeamMember[]>([]);
+  const [scheduledDate, setScheduledDate] = useState("");
+  const [scheduledTime, setScheduledTime] = useState("");
+  const [dateSavedFeedback, setDateSavedFeedback] = useState(false);
 
   useEffect(() => {
     if (!selectedMatch) return;
     setHome(selectedMatch.home_score);
     setAway(selectedMatch.away_score);
     setStatus(selectedMatch.status);
+    
+    // Varsayılan olarak bugünü (yerel saat dilimi ile) ve 12:30'u baz al
+    const localIsoDate = new Date(new Date().getTime() - new Date().getTimezoneOffset() * 60000).toISOString().split("T")[0];
+    setScheduledDate(selectedMatch.scheduled_date || localIsoDate);
+    setScheduledTime(selectedMatch.scheduled_time || "12:30");
   }, [selectedMatch]);
 
   useEffect(() => {
@@ -74,6 +84,14 @@ export function MatchSheet({ app }: Props) {
   const teamIdForEvent = teamSide === "home" ? homeId : awayId;
   const activeMembers = teamSide === "home" ? homeMembers : awayMembers;
 
+  const homeGoalEventsCount = matchEvents.filter((ev) => ev.team_id === homeId && ev.event_type === "goal").length;
+  const awayGoalEventsCount = matchEvents.filter((ev) => ev.team_id === awayId && ev.event_type === "goal").length;
+
+  const isGoalLimitReached =
+    eventType === "goal" &&
+    ((teamSide === "home" && homeGoalEventsCount >= selectedMatch.home_score) ||
+     (teamSide === "away" && awayGoalEventsCount >= selectedMatch.away_score));
+
   return (
     <>
       <button type="button" className="match-sheet-backdrop" aria-label="Kapat" onClick={closeMatch} />
@@ -81,152 +99,200 @@ export function MatchSheet({ app }: Props) {
         <div className="match-sheet__head">
           <button
             type="button"
-            className="btn-arena"
-            style={{ marginBottom: "0.75rem" }}
+            className="ghost"
+            style={{ marginBottom: "1rem", fontSize: "0.85rem", color: "var(--arena-muted)" }}
             onClick={closeMatch}
           >
-            ← Kapat
+            ← Geri dön
           </button>
-          <h2 id="match-sheet-title">
-            {selectedMatch.home_team_name} — {selectedMatch.away_team_name}
-          </h2>
-          <div style={{ fontSize: "0.82rem", color: "var(--arena-muted)" }}>
-            Grup {selectedMatch.group_name} · Maç #{selectedMatch.match_order}
+          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-end" }}>
+            <div>
+              <h2 id="match-sheet-title" style={{ margin: "0 0 0.25rem", fontSize: "1.4rem", fontWeight: 900, letterSpacing: "-0.02em" }}>
+                Maç Detayı
+              </h2>
+              <div style={{ fontSize: "0.85rem", color: "var(--arena-gold)", fontWeight: 700 }}>
+                {selectedMatch.group_name === "L" ? "Lig" : `Grup ${selectedMatch.group_name}`} · Maç #{selectedMatch.match_order}
+              </div>
+            </div>
           </div>
         </div>
         <div className="match-sheet__body">
-          <section style={{ marginBottom: "1.75rem" }}>
-            <h3 style={{ fontSize: "0.75rem", textTransform: "uppercase", letterSpacing: "0.08em", color: "var(--arena-muted)", margin: "0 0 0.75rem" }}>
-              Skor ve durum
-            </h3>
-            <div style={{ display: "grid", gridTemplateColumns: "1fr auto 1fr", gap: "0.75rem", alignItems: "end" }}>
-              <label style={{ display: "grid", gap: "0.35rem", fontSize: "0.78rem", fontWeight: 600 }}>
-                {selectedMatch.home_team_name}
+          <section className="match-sheet__section">
+            <h3 className="match-sheet__section-title">Skor ve Durum</h3>
+            
+            <div className="match-sheet__scoreboard">
+              <div className="match-sheet__team-col">
+                <div className="match-sheet__team-name">{selectedMatch.home_team_name}</div>
                 <input
                   type="number"
                   min={0}
                   value={home}
                   onChange={(e) => setHome(Number(e.target.value) || 0)}
-                  className="arena-input"
+                  className="arena-input match-sheet__score-input"
                 />
-              </label>
-              <span style={{ fontWeight: 900, paddingBottom: "0.5rem" }}>:</span>
-              <label style={{ display: "grid", gap: "0.35rem", fontSize: "0.78rem", fontWeight: 600 }}>
-                {selectedMatch.away_team_name}
+              </div>
+              
+              <div className="match-sheet__vs">VS</div>
+              
+              <div className="match-sheet__team-col">
+                <div className="match-sheet__team-name">{selectedMatch.away_team_name}</div>
                 <input
                   type="number"
                   min={0}
                   value={away}
                   onChange={(e) => setAway(Number(e.target.value) || 0)}
-                  className="arena-input"
+                  className="arena-input match-sheet__score-input"
                 />
-              </label>
+              </div>
             </div>
-            <label style={{ display: "grid", gap: "0.35rem", marginTop: "1rem", fontSize: "0.78rem", fontWeight: 600 }}>
-              Durum
+
+            <div style={{ display: "flex", gap: "0.75rem", marginTop: "1.25rem" }}>
               <select
                 value={status}
                 onChange={(e) => setStatus(e.target.value)}
                 className="arena-input"
+                style={{ flex: 1, fontWeight: 700 }}
               >
-                <option value="scheduled">Planlandı</option>
-                <option value="finished">Tamamlandı</option>
+                <option value="scheduled">⏱️ Planlandı</option>
+                <option value="finished">✅ Tamamlandı</option>
               </select>
-            </label>
+              
+              <button
+                type="button"
+                className="btn-arena btn-arena--gold"
+                style={{ flex: 2 }}
+                disabled={savingMatch || home < homeGoalEventsCount || away < awayGoalEventsCount}
+                title={(home < homeGoalEventsCount || away < awayGoalEventsCount) ? "Skorbord, girilen gol olaylarından daha düşük olamaz!" : ""}
+                onClick={() => void saveMatchScores({ homeScore: home, awayScore: away, status })}
+              >
+                {savingMatch ? "Kaydediliyor…" : "Kaydet"}
+              </button>
+            </div>
+
             <button
               type="button"
-              className="btn-arena btn-arena--gold"
-              style={{ marginTop: "1rem", width: "100%" }}
+              className="ghost"
+              style={{ width: "100%", marginTop: "1rem", color: "#ff4d4d", fontSize: "0.85rem", fontWeight: 600, border: "1px solid rgba(255,77,77,0.2)", borderRadius: "8px", padding: "0.5rem" }}
               disabled={savingMatch}
-              onClick={() => void saveMatchScores({ homeScore: home, awayScore: away, status })}
+              onClick={() => {
+                if (window.confirm("Bu maçı sıfırlamak istediğinize emin misiniz? Skorbord 0-0 yapılacak ve girilen tüm GOL/KART olayları silinecektir.")) {
+                  void resetMatchAction();
+                }
+              }}
             >
-              {savingMatch ? "Kaydediliyor…" : "Maçı tamamla / güncelle"}
+              🗑️ Maçı Sıfırla
             </button>
           </section>
 
-          <section>
-            <h3 style={{ fontSize: "0.75rem", textTransform: "uppercase", letterSpacing: "0.08em", color: "var(--arena-muted)", margin: "0 0 0.75rem" }}>
-              Gol ve kartlar
-            </h3>
-            <p style={{ fontSize: "0.82rem", color: "var(--arena-muted)", margin: "0 0 1rem", lineHeight: 1.5 }}>
-              Goller puan tablosu için skor satırını kullanır; buradaki gol satırları kayıt amaçlıdır. Sarı
-              ve kırmızı kartlar disiplin kaydı içindir.
-            </p>
-            <div style={{ display: "grid", gap: "0.65rem" }}>
-              <label style={{ display: "grid", gap: "0.35rem", fontSize: "0.78rem", fontWeight: 600 }}>
-                Oyuncu
-                <input
-                  value={playerName}
-                  onChange={(e) => setPlayerName(e.target.value)}
-                  placeholder="Ad Soyad"
+          <section className="match-sheet__section">
+            <h3 className="match-sheet__section-title">Tarih ve Saat</h3>
+            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "0.75rem" }}>
+              <input
+                type="date"
+                className="arena-input"
+                value={scheduledDate}
+                onChange={(e) => setScheduledDate(e.target.value)}
+                disabled={planningSchedule}
+              />
+              <input
+                type="time"
+                className="arena-input"
+                value={scheduledTime}
+                onChange={(e) => setScheduledTime(e.target.value)}
+                disabled={planningSchedule}
+              />
+              <button
+                type="button"
+                className="btn-arena"
+                style={{ gridColumn: "1 / -1", backgroundColor: dateSavedFeedback ? "var(--arena-green)" : "" }}
+                disabled={planningSchedule}
+                onClick={async () => {
+                  await updateMatchSchedule({
+                    id: selectedMatch.id,
+                    matchdayNo: selectedMatch.matchday_no,
+                    scheduledDate: scheduledDate.trim() ? scheduledDate : null,
+                    scheduledTime: scheduledTime.trim() ? scheduledTime : null,
+                    calendarSlot: selectedMatch.calendar_slot,
+                  });
+                  setDateSavedFeedback(true);
+                  setTimeout(() => setDateSavedFeedback(false), 2000);
+                }}
+              >
+                {dateSavedFeedback ? "✅ Güncellendi!" : (planningSchedule ? "Güncelleniyor..." : "Tarih/saati güncelle")}
+              </button>
+            </div>
+          </section>
+
+          <section className="match-sheet__section">
+            <h3 className="match-sheet__section-title">Olaylar (Gol & Kart)</h3>
+            
+            <div style={{ display: "grid", gap: "0.75rem", background: "rgba(0,0,0,0.1)", padding: "1rem", borderRadius: "12px", border: "1px solid rgba(255,255,255,0.05)" }}>
+              <select
+                value={playerName}
+                onChange={(e) => setPlayerName(e.target.value)}
+                className="arena-input"
+              >
+                <option value="" disabled>
+                  {activeMembers.length > 0 ? "Oyuncu seçin..." : "Takımda kayıtlı oyuncu yok"}
+                </option>
+                {activeMembers.map((m) => (
+                  <option key={m.id} value={m.full_name}>
+                    {m.jersey_no != null ? `#${m.jersey_no} ` : ""}{m.full_name}
+                  </option>
+                ))}
+              </select>
+              
+              <div style={{ display: "grid", gap: "0.75rem" }}>
+                <select
+                  value={teamSide}
+                  onChange={(e) => {
+                    setTeamSide(e.target.value as "home" | "away");
+                    setPlayerName("");
+                  }}
                   className="arena-input"
-                  list="players-list"
-                />
-                <datalist id="players-list">
-                  {activeMembers.map((m) => (
-                    <option key={m.id} value={m.full_name} />
-                  ))}
-                </datalist>
-              </label>
-              <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "0.65rem" }}>
-                <label style={{ display: "grid", gap: "0.35rem", fontSize: "0.78rem", fontWeight: 600 }}>
-                  Takım
-                  <select
-                    value={teamSide}
-                    onChange={(e) => setTeamSide(e.target.value as "home" | "away")}
-                    className="arena-input"
-                  >
-                    <option value="home">{selectedMatch.home_team_name}</option>
-                    <option value="away">{selectedMatch.away_team_name}</option>
-                  </select>
-                </label>
-                <label style={{ display: "grid", gap: "0.35rem", fontSize: "0.78rem", fontWeight: 600 }}>
-                  Dakika
-                  <input
-                    type="number"
-                    min={0}
-                    max={120}
-                    value={minute}
-                    onChange={(e) => setMinute(Number(e.target.value) || 0)}
-                    className="arena-input"
-                  />
-                </label>
+                >
+                  <option value="home">{selectedMatch.home_team_name}</option>
+                  <option value="away">{selectedMatch.away_team_name}</option>
+                </select>
               </div>
-              <label style={{ display: "grid", gap: "0.35rem", fontSize: "0.78rem", fontWeight: 600 }}>
-                Olay
+              
+              <div style={{ display: "grid", gridTemplateColumns: "1fr auto", gap: "0.75rem" }}>
                 <select
                   value={eventType}
                   onChange={(e) => setEventType(e.target.value)}
                   className="arena-input"
                 >
-                  <option value="goal">Gol</option>
-                  <option value="yellow">Sarı kart</option>
-                  <option value="red">Kırmızı kart</option>
+                  <option value="goal">⚽ Gol</option>
+                  <option value="yellow">🟨 Sarı kart</option>
+                  <option value="red">🟥 Kırmızı kart</option>
                 </select>
-              </label>
-              <button
-                type="button"
-                className="btn-arena"
-                onClick={() => {
-                  void addEvent({
-                    teamId: teamIdForEvent,
-                    playerName: playerName.trim(),
-                    eventType,
-                    minute,
-                  });
-                  setPlayerName("");
-                }}
-                disabled={!playerName.trim()}
-              >
-                Olay ekle
-              </button>
+                <button
+                  type="button"
+                  className="btn-arena"
+                  onClick={() => {
+                    void addEvent({
+                      teamId: teamIdForEvent,
+                      playerName: playerName.trim(),
+                      eventType,
+                      minute: 0,
+                    });
+                    setPlayerName("");
+                  }}
+                  disabled={!playerName.trim() || isGoalLimitReached}
+                  title={isGoalLimitReached ? "Skorborddaki golden fazlası eklenemez!" : ""}
+                >
+                  Ekle
+                </button>
+              </div>
             </div>
 
             <ul style={{ listStyle: "none", margin: "1.25rem 0 0", padding: 0, display: "flex", flexDirection: "column", gap: "0.5rem" }}>
               {loadingMatchEvents ? (
-                <li style={{ color: "var(--arena-muted)" }}>Yükleniyor…</li>
+                <li style={{ color: "var(--arena-muted)", textAlign: "center", padding: "1rem" }}>Yükleniyor…</li>
               ) : matchEvents.length === 0 ? (
-                <li style={{ color: "var(--arena-muted)", fontSize: "0.9rem" }}>Henüz olay yok.</li>
+                <li style={{ color: "var(--arena-muted)", fontSize: "0.85rem", textAlign: "center", padding: "1rem", background: "rgba(0,0,0,0.1)", borderRadius: "12px" }}>
+                  Henüz olay eklenmedi.
+                </li>
               ) : (
                 matchEvents.map((ev) => (
                   <li
@@ -235,26 +301,29 @@ export function MatchSheet({ app }: Props) {
                       display: "flex",
                       alignItems: "center",
                       justifyContent: "space-between",
-                      gap: "0.5rem",
-                      padding: "0.55rem 0.65rem",
+                      gap: "0.75rem",
+                      padding: "0.75rem 1rem",
                       borderRadius: 12,
-                      background: "var(--arena-surface2)",
-                      border: "1px solid var(--arena-line)",
+                      background: "rgba(255,255,255,0.03)",
+                      border: "1px solid rgba(255,255,255,0.08)",
                       fontSize: "0.85rem",
                     }}
                   >
-                    <span>
+                    <div style={{ display: "flex", alignItems: "center", gap: "0.75rem" }}>
                       <span
                         className={
                           "event-pill event-pill--" +
                           (ev.event_type === "goal" ? "goal" : ev.event_type === "yellow" ? "yellow" : "red")
                         }
                       >
-                        {ev.event_type === "goal" ? "⚽ Gol" : ev.event_type === "yellow" ? "🟨 Sarı" : "🟥 Kırmızı"}
-                      </span>{" "}
-                      <strong>{ev.player_name}</strong> · {ev.team_name} · {ev.minute}&apos;
-                    </span>
-                    <button type="button" className="btn-arena btn-arena--danger" onClick={() => void removeEvent(ev.id)}>
+                        {ev.event_type === "goal" ? "⚽" : ev.event_type === "yellow" ? "🟨" : "🟥"}
+                      </span>
+                      <div style={{ display: "flex", flexDirection: "column" }}>
+                        <strong style={{ fontSize: "0.9rem" }}>{ev.player_name}</strong>
+                        <span style={{ fontSize: "0.7rem", color: "var(--arena-muted)" }}>{ev.team_name}</span>
+                      </div>
+                    </div>
+                    <button type="button" className="ghost" style={{ padding: "0.25rem 0.5rem", color: "var(--arena-red)", fontSize: "0.75rem" }} onClick={() => void removeEvent(ev.id)}>
                       Sil
                     </button>
                   </li>

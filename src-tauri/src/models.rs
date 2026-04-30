@@ -80,6 +80,7 @@ pub struct MatchRow {
     pub match_order: i64,
     pub matchday_no: i64,
     pub scheduled_date: Option<String>,
+    pub scheduled_time: Option<String>,
     pub calendar_slot: i64,
     pub status: String,
     pub home_score: i64,
@@ -124,6 +125,7 @@ pub struct UpdateMatchSchedulePayload {
     pub id: i64,
     pub matchday_no: i64,
     pub scheduled_date: Option<String>,
+    pub scheduled_time: Option<String>,
     pub calendar_slot: i64,
 }
 
@@ -190,6 +192,12 @@ pub struct UpdateGroupDailyLimitPayload {
 #[serde(rename_all = "camelCase")]
 pub struct AutoSchedulePayload {
     pub start_date: String,
+}
+
+#[derive(Debug, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct RunLeagueDrawPayload {
+    pub weeks_count: i64,
 }
 
 #[derive(Debug, Serialize)]

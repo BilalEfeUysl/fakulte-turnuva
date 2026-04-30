@@ -18,6 +18,7 @@ export type MatchRow = {
   match_order: number;
   matchday_no: number;
   scheduled_date: string | null;
+  scheduled_time: string | null;
   calendar_slot: number;
   status: "scheduled" | "finished" | string;
   home_score: number;

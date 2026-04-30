@@ -64,17 +64,33 @@ pub fn get_team_summaries(db: tauri::State<DbConn>) -> Result<Vec<TeamSummaryRow
             "SELECT
                t.id,
                t.name,
-               SUM(CASE WHEN m.status = 'finished' AND (m.home_team_id = t.id OR m.away_team_id = t.id) THEN 1 ELSE 0 END) AS played,
-               SUM(CASE WHEN m.status = 'finished' AND m.home_team_id = t.id THEN m.home_score
-                        WHEN m.status = 'finished' AND m.away_team_id = t.id THEN m.away_score ELSE 0 END) AS gf,
-               SUM(CASE WHEN m.status = 'finished' AND m.home_team_id = t.id THEN m.away_score
-                        WHEN m.status = 'finished' AND m.away_team_id = t.id THEN m.home_score ELSE 0 END) AS ga,
-               SUM(CASE WHEN e.event_type = 'yellow' AND e.team_id = t.id THEN 1 ELSE 0 END) AS yc,
-               SUM(CASE WHEN e.event_type = 'red' AND e.team_id = t.id THEN 1 ELSE 0 END) AS rc
+               COALESCE(m_stats.played, 0) AS played,
+               COALESCE(m_stats.gf, 0) AS gf,
+               COALESCE(m_stats.ga, 0) AS ga,
+               COALESCE(e_stats.yc, 0) AS yc,
+               COALESCE(e_stats.rc, 0) AS rc
              FROM teams t
-             LEFT JOIN matches m ON m.home_team_id = t.id OR m.away_team_id = t.id
-             LEFT JOIN match_events e ON e.team_id = t.id
-             GROUP BY t.id, t.name
+             LEFT JOIN (
+               SELECT
+                 team_id,
+                 SUM(played) as played,
+                 SUM(gf) as gf,
+                 SUM(ga) as ga
+               FROM (
+                 SELECT home_team_id AS team_id, 1 AS played, home_score AS gf, away_score AS ga FROM matches WHERE status = 'finished'
+                 UNION ALL
+                 SELECT away_team_id AS team_id, 1 AS played, away_score AS gf, home_score AS ga FROM matches WHERE status = 'finished'
+               )
+               GROUP BY team_id
+             ) m_stats ON m_stats.team_id = t.id
+             LEFT JOIN (
+               SELECT
+                 team_id,
+                 SUM(CASE WHEN event_type = 'yellow' THEN 1 ELSE 0 END) AS yc,
+                 SUM(CASE WHEN event_type = 'red' THEN 1 ELSE 0 END) AS rc
+               FROM match_events
+               GROUP BY team_id
+             ) e_stats ON e_stats.team_id = t.id
              ORDER BY t.name COLLATE NOCASE",
         )
         .map_err(|e| e.to_string())?;

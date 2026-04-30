@@ -48,6 +48,7 @@ pub fn init_db(app: &tauri::AppHandle) -> Result<Connection, Box<dyn std::error:
             match_order INTEGER NOT NULL DEFAULT 0,
             matchday_no INTEGER NOT NULL DEFAULT 0,
             scheduled_date TEXT,
+            scheduled_time TEXT,
             calendar_slot INTEGER NOT NULL DEFAULT 0,
             status TEXT NOT NULL DEFAULT 'scheduled',
             home_score INTEGER NOT NULL DEFAULT 0,
@@ -104,6 +105,12 @@ pub fn init_db(app: &tauri::AppHandle) -> Result<Connection, Box<dyn std::error:
         &conn,
         "matches",
         "scheduled_date",
+        "TEXT",
+    )?;
+    ensure_column(
+        &conn,
+        "matches",
+        "scheduled_time",
         "TEXT",
     )?;
     ensure_column(

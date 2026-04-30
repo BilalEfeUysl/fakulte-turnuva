@@ -10,6 +10,10 @@ export function runDraw(): Promise<GroupWithTeams[]> {
   return invoke<GroupWithTeams[]>("run_draw");
 }
 
+export function runLeagueDraw(input: { weeksCount: number }): Promise<GroupWithTeams[]> {
+  return invoke<GroupWithTeams[]>("run_league_draw", { payload: { weeksCount: input.weeksCount } });
+}
+
 export function getGroups(): Promise<GroupWithTeams[]> {
   return invoke<GroupWithTeams[]>("get_groups");
 }
@@ -43,4 +47,8 @@ export function updateGroupDailyLimit(input: {
 
 export function autoScheduleGroupMatches(startDate: string): Promise<void> {
   return invoke<void>("auto_schedule_group_matches", { payload: { startDate } });
+}
+
+export function resetAll(): Promise<void> {
+  return invoke<void>("reset_all");
 }

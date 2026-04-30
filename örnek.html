@@ -1,0 +1,1582 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Şampiyonlar Kurası — 10 Takım Fikstür</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Outfit:wght@300;400;500;600;700&display=swap" rel="stylesheet" />
+  <style>
+    :root {
+      --bg-deep: #030508;
+      --bg-card: rgba(12, 18, 32, 0.72);
+      --gold: #c9a227;
+      --gold-dim: #8a7220;
+      --gold-glow: rgba(201, 162, 39, 0.45);
+      --silver: #c8d4e8;
+      --muted: #6b7a94;
+      --accent: #1e3a5f;
+      --success: #3dd68c;
+      --danger: #ff5c5c;
+      --radius: 18px;
+      --font-display: "Bebas Neue", sans-serif;
+      --font-body: "Outfit", system-ui, sans-serif;
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    html {
+      scroll-behavior: smooth;
+    }
+
+    body {
+      font-family: var(--font-body);
+      background: var(--bg-deep);
+      color: var(--silver);
+      min-height: 100vh;
+      overflow-x: hidden;
+    }
+
+    .ambient {
+      position: fixed;
+      inset: 0;
+      pointer-events: none;
+      z-index: 0;
+      background:
+        radial-gradient(ellipse 80% 50% at 50% -20%, rgba(30, 58, 95, 0.55), transparent),
+        radial-gradient(ellipse 60% 40% at 100% 50%, rgba(201, 162, 39, 0.08), transparent),
+        radial-gradient(ellipse 50% 30% at 0% 80%, rgba(30, 90, 120, 0.12), transparent);
+    }
+
+    .stars {
+      position: fixed;
+      inset: 0;
+      pointer-events: none;
+      z-index: 0;
+      opacity: 0.35;
+      background-image:
+        radial-gradient(1px 1px at 20% 30%, white, transparent),
+        radial-gradient(1px 1px at 60% 70%, white, transparent),
+        radial-gradient(1px 1px at 80% 20%, white, transparent),
+        radial-gradient(1px 1px at 40% 90%, white, transparent),
+        radial-gradient(1px 1px at 10% 60%, white, transparent);
+      background-size: 100% 100%;
+    }
+
+    .wrap {
+      position: relative;
+      z-index: 1;
+      max-width: 1100px;
+      margin: 0 auto;
+      padding: 2rem 1.25rem 4rem;
+    }
+
+    header.hero {
+      text-align: center;
+      padding: 2.5rem 0 3rem;
+    }
+
+    .badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.5rem;
+      font-size: 0.7rem;
+      font-weight: 600;
+      letter-spacing: 0.2em;
+      text-transform: uppercase;
+      color: var(--gold);
+      border: 1px solid rgba(201, 162, 39, 0.35);
+      padding: 0.45rem 1rem;
+      border-radius: 999px;
+      margin-bottom: 1.25rem;
+      background: rgba(201, 162, 39, 0.06);
+    }
+
+    .hero h1 {
+      font-family: var(--font-display);
+      font-size: clamp(2.8rem, 8vw, 4.5rem);
+      font-weight: 400;
+      letter-spacing: 0.06em;
+      line-height: 1;
+      background: linear-gradient(180deg, #fff 0%, var(--gold) 45%, var(--gold-dim) 100%);
+      -webkit-background-clip: text;
+      background-clip: text;
+      color: transparent;
+      text-shadow: 0 0 60px var(--gold-glow);
+    }
+
+    .hero p.lead {
+      margin-top: 1rem;
+      font-size: 1.05rem;
+      font-weight: 300;
+      color: var(--muted);
+      max-width: 560px;
+      margin-left: auto;
+      margin-right: auto;
+      line-height: 1.6;
+    }
+
+    .panel {
+      background: var(--bg-card);
+      backdrop-filter: blur(20px);
+      -webkit-backdrop-filter: blur(20px);
+      border: 1px solid rgba(255, 255, 255, 0.06);
+      border-radius: var(--radius);
+      padding: 1.75rem;
+      margin-bottom: 1.5rem;
+      box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);
+    }
+
+    .panel h2 {
+      font-family: var(--font-display);
+      font-size: 1.65rem;
+      letter-spacing: 0.12em;
+      color: var(--gold);
+      margin-bottom: 1rem;
+      font-weight: 400;
+    }
+
+    .teams-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+      gap: 0.75rem;
+    }
+
+    .team-input {
+      display: flex;
+      flex-direction: column;
+      gap: 0.35rem;
+    }
+
+    .team-input label {
+      font-size: 0.65rem;
+      text-transform: uppercase;
+      letter-spacing: 0.15em;
+      color: var(--muted);
+    }
+
+    .team-input input {
+      font-family: var(--font-body);
+      font-size: 0.95rem;
+      padding: 0.65rem 0.85rem;
+      border-radius: 10px;
+      border: 1px solid rgba(255, 255, 255, 0.1);
+      background: rgba(0, 0, 0, 0.35);
+      color: var(--silver);
+      transition: border-color 0.2s, box-shadow 0.2s;
+    }
+
+    .team-input input:focus {
+      outline: none;
+      border-color: var(--gold-dim);
+      box-shadow: 0 0 0 3px rgba(201, 162, 39, 0.15);
+    }
+
+    .actions {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.75rem;
+      margin-top: 1.5rem;
+      align-items: center;
+    }
+
+    .btn {
+      font-family: var(--font-body);
+      font-weight: 600;
+      font-size: 0.9rem;
+      letter-spacing: 0.04em;
+      padding: 0.85rem 1.6rem;
+      border-radius: 12px;
+      border: none;
+      cursor: pointer;
+      transition: transform 0.15s, box-shadow 0.2s, opacity 0.2s;
+    }
+
+    .btn:disabled {
+      opacity: 0.45;
+      cursor: not-allowed;
+      transform: none;
+    }
+
+    .btn-primary {
+      background: linear-gradient(135deg, var(--gold) 0%, #a68520 100%);
+      color: #0a0e14;
+      box-shadow: 0 8px 24px rgba(201, 162, 39, 0.35);
+    }
+
+    .btn-primary:hover:not(:disabled) {
+      transform: translateY(-2px);
+      box-shadow: 0 12px 32px rgba(201, 162, 39, 0.45);
+    }
+
+    .btn-ghost {
+      background: transparent;
+      color: var(--silver);
+      border: 1px solid rgba(255, 255, 255, 0.15);
+    }
+
+    .btn-ghost:hover:not(:disabled) {
+      border-color: var(--gold-dim);
+      color: var(--gold);
+    }
+
+    #drawStage {
+      display: none;
+    }
+
+    #drawStage.active {
+      display: block;
+      animation: fadeUp 0.6s ease forwards;
+    }
+
+    @keyframes fadeUp {
+      from {
+        opacity: 0;
+        transform: translateY(16px);
+      }
+      to {
+        opacity: 1;
+        transform: translateY(0);
+      }
+    }
+
+    .draw-help {
+      font-size: 0.88rem;
+      line-height: 1.55;
+      color: var(--silver);
+      background: rgba(201, 162, 39, 0.07);
+      border: 1px solid rgba(201, 162, 39, 0.22);
+      border-radius: 12px;
+      padding: 1rem 1.15rem;
+      margin-bottom: 1.25rem;
+    }
+
+    .draw-help strong {
+      color: var(--gold);
+      font-weight: 600;
+    }
+
+    .draw-interactive {
+      display: grid;
+      grid-template-columns: 1fr;
+      gap: 1.75rem;
+      align-items: start;
+    }
+
+    @media (min-width: 880px) {
+      .draw-interactive {
+        grid-template-columns: 1fr 1fr;
+      }
+    }
+
+    .bowl-title {
+      font-size: 0.75rem;
+      letter-spacing: 0.2em;
+      text-transform: uppercase;
+      color: var(--muted);
+      margin-bottom: 0.65rem;
+    }
+
+    .draw-step-hint {
+      font-size: 0.88rem;
+      color: var(--silver);
+      line-height: 1.45;
+      margin-bottom: 0.85rem;
+    }
+
+    .draw-strip {
+      border-radius: 12px;
+      border: 1px solid rgba(255, 255, 255, 0.08);
+      overflow: hidden;
+      background: rgba(0, 0, 0, 0.25);
+    }
+
+    .draw-strip-row {
+      display: grid;
+      grid-template-columns: 1fr auto;
+      align-items: center;
+      gap: 0.75rem;
+      padding: 0.5rem 0.75rem;
+      font-size: 0.8rem;
+      border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+    }
+
+    .draw-strip-row:last-child {
+      border-bottom: none;
+    }
+
+    .draw-strip-row.focus {
+      background: rgba(201, 162, 39, 0.1);
+    }
+
+    .draw-strip-row.done .strip-name {
+      color: var(--success);
+    }
+
+    .strip-dots {
+      font-family: var(--font-display);
+      letter-spacing: 0.12em;
+      font-size: 1rem;
+      color: var(--gold-dim);
+      white-space: nowrap;
+    }
+
+    .strip-dots .on {
+      color: var(--gold);
+    }
+
+    .kura-main-btn {
+      font-size: 1.05rem;
+      padding: 1rem 2rem;
+    }
+
+    .draw-session-head {
+      font-size: 1rem;
+      font-weight: 600;
+      color: #fff;
+      margin-bottom: 0.75rem;
+      min-height: 2.5rem;
+    }
+
+    .draw-opponents-out {
+      display: flex;
+      flex-direction: column;
+      gap: 0.5rem;
+      min-height: 5rem;
+    }
+
+    .draw-opp-card {
+      padding: 0.65rem 0.85rem;
+      border-radius: 10px;
+      background: rgba(0, 0, 0, 0.35);
+      border: 1px solid rgba(201, 162, 39, 0.25);
+      animation: rowIn 0.45s ease forwards;
+      opacity: 0;
+      transform: translateY(6px);
+    }
+
+    @keyframes rowIn {
+      to {
+        opacity: 1;
+        transform: translateY(0);
+      }
+    }
+
+    .draw-opp-card .wk {
+      font-size: 0.65rem;
+      letter-spacing: 0.14em;
+      text-transform: uppercase;
+      color: var(--muted);
+      margin-bottom: 0.2rem;
+    }
+
+    .draw-opp-card .nm {
+      font-weight: 600;
+      font-size: 1.02rem;
+      color: var(--silver);
+    }
+
+    .draw-history {
+      margin-top: 1.25rem;
+      padding-top: 1rem;
+      border-top: 1px dashed rgba(255, 255, 255, 0.08);
+      font-size: 0.78rem;
+      color: var(--muted);
+      line-height: 1.5;
+      max-height: 160px;
+      overflow-y: auto;
+    }
+
+    .draw-history strong {
+      color: var(--gold);
+    }
+
+    .draw-progress-wrap {
+      margin-top: 1.25rem;
+    }
+
+    .progress-bar {
+      height: 4px;
+      background: rgba(255, 255, 255, 0.08);
+      border-radius: 4px;
+      overflow: hidden;
+    }
+
+    .progress-bar span {
+      display: block;
+      height: 100%;
+      width: 0%;
+      background: linear-gradient(90deg, var(--gold-dim), var(--gold));
+      border-radius: 4px;
+      transition: width 0.35s ease;
+    }
+
+    #fixtureSection {
+      display: none;
+    }
+
+    #fixtureSection.visible {
+      display: block;
+      animation: fadeUp 0.6s ease forwards;
+    }
+
+    .fixture-tabs {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.5rem;
+      margin-bottom: 1.25rem;
+    }
+
+    .fixture-tabs button {
+      font-family: var(--font-body);
+      font-size: 0.82rem;
+      font-weight: 600;
+      padding: 0.55rem 1.1rem;
+      border-radius: 999px;
+      border: 1px solid rgba(255, 255, 255, 0.12);
+      background: rgba(0, 0, 0, 0.25);
+      color: var(--muted);
+      cursor: pointer;
+      transition: color 0.2s, border-color 0.2s, background 0.2s;
+    }
+
+    .fixture-tabs button.active {
+      color: #0a0e14;
+      background: var(--gold);
+      border-color: var(--gold);
+    }
+
+    .tab-panel {
+      display: none;
+    }
+
+    .tab-panel.active {
+      display: block;
+    }
+
+    .matchdays {
+      display: flex;
+      flex-direction: column;
+      gap: 1.25rem;
+    }
+
+    .matchday {
+      border-radius: 14px;
+      overflow: hidden;
+      border: 1px solid rgba(255, 255, 255, 0.06);
+    }
+
+    .matchday-head {
+      background: linear-gradient(90deg, rgba(201, 162, 39, 0.2), transparent);
+      padding: 0.75rem 1rem;
+      font-family: var(--font-display);
+      letter-spacing: 0.15em;
+      font-size: 1.1rem;
+      color: var(--gold);
+    }
+
+    .match-row {
+      display: grid;
+      grid-template-columns: 1fr auto auto auto 1fr;
+      align-items: center;
+      gap: 0.5rem;
+      padding: 0.75rem 1rem;
+      background: rgba(0, 0, 0, 0.2);
+      border-top: 1px solid rgba(255, 255, 255, 0.04);
+    }
+
+    .match-row:nth-child(even) {
+      background: rgba(255, 255, 255, 0.02);
+    }
+
+    .match-row .home {
+      text-align: right;
+      font-weight: 500;
+    }
+
+    .match-row .away {
+      text-align: left;
+      font-weight: 500;
+    }
+
+    .score-in {
+      width: 2.25rem;
+      padding: 0.35rem 0.25rem;
+      text-align: center;
+      font-family: var(--font-body);
+      font-weight: 600;
+      font-size: 0.95rem;
+      border-radius: 8px;
+      border: 1px solid rgba(255, 255, 255, 0.12);
+      background: rgba(0, 0, 0, 0.4);
+      color: var(--silver);
+    }
+
+    .score-in:focus {
+      outline: none;
+      border-color: var(--gold-dim);
+    }
+
+    .vs-pill {
+      font-size: 0.6rem;
+      font-weight: 700;
+      letter-spacing: 0.12em;
+      color: var(--muted);
+      padding: 0.2rem 0.35rem;
+      border: 1px solid rgba(255, 255, 255, 0.1);
+      border-radius: 6px;
+    }
+
+    .matrix-note {
+      font-size: 0.8rem;
+      color: var(--muted);
+      margin-top: 1rem;
+      line-height: 1.5;
+    }
+
+    .team-pills {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.45rem;
+      margin-bottom: 1rem;
+    }
+
+    .team-pills button {
+      font-size: 0.78rem;
+      padding: 0.45rem 0.75rem;
+      border-radius: 999px;
+      border: 1px solid rgba(255, 255, 255, 0.1);
+      background: rgba(0, 0, 0, 0.3);
+      color: var(--silver);
+      cursor: pointer;
+      max-width: 100%;
+      text-overflow: ellipsis;
+      overflow: hidden;
+      white-space: nowrap;
+    }
+
+    .team-pills button.active {
+      border-color: var(--gold);
+      color: var(--gold);
+    }
+
+    .team-fixture-list {
+      border-radius: 12px;
+      border: 1px solid rgba(255, 255, 255, 0.06);
+      overflow: hidden;
+    }
+
+    .tf-row {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 0.85rem 1rem;
+      background: rgba(0, 0, 0, 0.2);
+      border-top: 1px solid rgba(255, 255, 255, 0.04);
+    }
+
+    .tf-row:first-child {
+      border-top: none;
+    }
+
+    .tf-wk {
+      font-family: var(--font-display);
+      letter-spacing: 0.1em;
+      color: var(--gold-dim);
+      font-size: 1rem;
+      min-width: 4.5rem;
+    }
+
+    .standings-wrap {
+      margin-top: 1.75rem;
+      padding-top: 1.5rem;
+      border-top: 1px solid rgba(255, 255, 255, 0.08);
+    }
+
+    .standings-wrap h3 {
+      font-family: var(--font-display);
+      letter-spacing: 0.12em;
+      color: var(--gold);
+      font-size: 1.2rem;
+      font-weight: 400;
+      margin-bottom: 0.75rem;
+    }
+
+    .stand-table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 0.82rem;
+    }
+
+    .stand-table th,
+    .stand-table td {
+      padding: 0.55rem 0.45rem;
+      text-align: center;
+      border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+    }
+
+    .stand-table th {
+      color: var(--muted);
+      font-weight: 600;
+      font-size: 0.68rem;
+      letter-spacing: 0.06em;
+    }
+
+    .stand-table td:nth-child(2) {
+      text-align: left;
+      font-weight: 500;
+    }
+
+    .stand-table tr.top4 td:first-child {
+      color: var(--gold);
+      font-weight: 700;
+    }
+
+    #knockoutSection {
+      display: none;
+    }
+
+    #knockoutSection.visible {
+      display: block;
+      animation: fadeUp 0.6s ease forwards;
+    }
+
+    .bracket {
+      display: flex;
+      flex-direction: column;
+      gap: 1.25rem;
+      margin-top: 1rem;
+    }
+
+    .bracket-row {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 1rem;
+    }
+
+    @media (max-width: 640px) {
+      .bracket-row {
+        grid-template-columns: 1fr;
+      }
+    }
+
+    .ko-card {
+      border-radius: 12px;
+      border: 1px solid rgba(255, 255, 255, 0.08);
+      padding: 1rem;
+      background: rgba(0, 0, 0, 0.25);
+    }
+
+    .ko-card h4 {
+      font-size: 0.72rem;
+      letter-spacing: 0.15em;
+      text-transform: uppercase;
+      color: var(--muted);
+      margin-bottom: 0.75rem;
+    }
+
+    .ko-match {
+      display: flex;
+      flex-direction: column;
+      gap: 0.5rem;
+    }
+
+    .ko-team {
+      font-weight: 600;
+      font-size: 0.92rem;
+    }
+
+    .ko-scores {
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+      margin-top: 0.35rem;
+    }
+
+    .confetti {
+      position: fixed;
+      inset: 0;
+      pointer-events: none;
+      z-index: 100;
+    }
+
+    .confetti span {
+      position: absolute;
+      width: 8px;
+      height: 8px;
+      top: -10px;
+      animation: fall linear forwards;
+    }
+
+    @keyframes fall {
+      to {
+        transform: translateY(100vh) rotate(720deg);
+        opacity: 0.3;
+      }
+    }
+
+    footer.note {
+      text-align: center;
+      font-size: 0.75rem;
+      color: var(--muted);
+      margin-top: 2rem;
+      opacity: 0.7;
+    }
+  </style>
+</head>
+<body>
+  <div class="ambient"></div>
+  <div class="stars"></div>
+  <div class="wrap">
+    <header class="hero">
+      <div class="badge">10 takım · 3 hafta · her hafta 5 maç · herkes her hafta oynar</div>
+      <h1>Şampiyonlar Kurası</h1>
+      <p class="lead">
+        Her takım üç farklı rakiple oynar. Üç haftanın her birinde beş eşleşme vardır; ev sahibi her maç için ayrıca kura ile
+        belirlenir. Lig sonunda puan tablosuna göre ilk dört takım yarı final ve finale çıkar.
+      </p>
+    </header>
+
+    <section class="panel" id="setupPanel">
+      <h2>Takımlar</h2>
+      <div class="teams-grid" id="teamsGrid"></div>
+      <div class="actions">
+        <button type="button" class="btn btn-primary" id="btnDraw">Kurayı başlat</button>
+        <button type="button" class="btn btn-ghost" id="btnRandomNames">Rastgele isimler</button>
+      </div>
+    </section>
+
+    <section class="panel" id="drawStage">
+      <h2>Canlı kura</h2>
+      <div class="draw-help" id="drawHelp">
+        <strong>Şampiyonlar Ligi tarzı:</strong> Her basışta <em>Kura çek</em> — önce torbadan <strong>rastgele bir takım</strong>
+        çıkar, sonra aynı düğmeyle sırayla <strong>henüz belli olmayan</strong> rakiplerini açarsınız (hafta 1 → 2 → 3).
+        Bir takım başka birinin çekilişinde rakip olarak zaten göründüyse, onun için otomatik olarak daha az “rakip
+        çekimi” kalır; bazı takımların üç rakibi de başkaları sayesinde dolmuş olabilir. Tüm eşleşmeler netleşince
+        <em>Fikstüre geç</em> açılır.
+      </div>
+      <div class="draw-interactive">
+        <div>
+          <div class="bowl-title">Takımlar — bilinen rakip sayısı</div>
+          <p class="draw-step-hint" id="drawStepHint">
+            Aşağıdaki ızgarada her satır 3 rakibi gösterir (● açıldı, ○ bekliyor). Ortadaki büyük düğmeye basarak
+            devam edin.
+          </p>
+          <div class="draw-strip" id="drawStrip"></div>
+        </div>
+        <div>
+          <div class="bowl-title">Çekiliş ekranı</div>
+          <div class="draw-session-head" id="drawSessionHead">Kurayı başlattıktan sonra “Kura çek”e basın.</div>
+          <div class="draw-opponents-out" id="drawOpponentsOut"></div>
+          <div class="actions" style="margin-top: 1rem; justify-content: center">
+            <button type="button" class="btn btn-primary kura-main-btn" id="btnKuraStep">Kura çek</button>
+          </div>
+          <div class="draw-history" id="drawHistory"></div>
+        </div>
+      </div>
+      <div class="draw-progress-wrap">
+        <div class="progress-bar"><span id="drawProgress"></span></div>
+      </div>
+      <div class="actions" style="margin-top: 1.25rem">
+        <button type="button" class="btn btn-primary" id="btnShowFixture" disabled>Fikstüre geç</button>
+      </div>
+    </section>
+
+    <section class="panel" id="fixtureSection">
+      <h2>Fikstür ve puan durumu</h2>
+      <div class="fixture-tabs" id="fixtureTabs">
+        <button type="button" class="active" data-tab="weeks">Haftalara göre</button>
+        <button type="button" data-tab="teams">Takıma göre</button>
+      </div>
+      <div class="tab-panel active" id="tabWeeks"></div>
+      <div class="tab-panel" id="tabTeams">
+        <div class="team-pills" id="teamPills"></div>
+        <div class="team-fixture-list" id="teamFixtureBody"></div>
+      </div>
+      <p class="matrix-note">
+        Skorları girince puan tablosu güncellenir (galibiyet 3, beraberlik 1, mağlubiyet 0). İlk dört sıra, elemeyi
+        doldurmak için kullanılır.
+      </p>
+      <div class="standings-wrap">
+        <h3>Puan durumu</h3>
+        <table class="stand-table" id="standTable">
+          <thead>
+            <tr>
+              <th>#</th>
+              <th>Takım</th>
+              <th>O</th>
+              <th>G</th>
+              <th>B</th>
+              <th>M</th>
+              <th>A</th>
+              <th>Y</th>
+              <th>Av</th>
+              <th>P</th>
+            </tr>
+          </thead>
+          <tbody id="standBody"></tbody>
+        </table>
+      </div>
+    </section>
+
+    <section class="panel" id="knockoutSection">
+      <h2>Eleme — ilk dört</h2>
+      <p class="matrix-note" style="margin-top: 0">
+        Yarı finaller: <strong>1. sıra vs 4. sıra</strong> ve <strong>2. sıra vs 3. sıra</strong> (tek maç). Kazananlar
+        finalde karşılaşır. Skorları girerek ilerletin.
+      </p>
+      <div class="bracket" id="bracket"></div>
+    </section>
+
+    <footer class="note">Yerel tarayıcıda çalışır; veri sunucuya gitmez.</footer>
+  </div>
+
+  <script>
+    (function () {
+      const DEFAULT_NAMES = [
+        "İstanbul FK",
+        "Anadolu SC",
+        "Karadeniz United",
+        "Ege 1907",
+        "Toros City",
+        "Kuzey Arena",
+        "Batı Kulübü",
+        "Orta Saha SK",
+        "Rakipköy",
+        "Finalspor",
+      ];
+
+      /** 3 hafta × 5 maç; her hafta mükemmel eşleşme — her takım her hafta tam bir maç oynar */
+      const BASE_ROUNDS = [
+        [
+          [0, 1],
+          [2, 3],
+          [4, 5],
+          [6, 7],
+          [8, 9],
+        ],
+        [
+          [0, 2],
+          [1, 3],
+          [4, 6],
+          [5, 8],
+          [7, 9],
+        ],
+        [
+          [0, 3],
+          [1, 2],
+          [4, 7],
+          [5, 9],
+          [6, 8],
+        ],
+      ];
+
+      function shuffle(arr) {
+        const a = arr.slice();
+        for (let i = a.length - 1; i > 0; i--) {
+          const j = (Math.random() * (i + 1)) | 0;
+          [a[i], a[j]] = [a[j], a[i]];
+        }
+        return a;
+      }
+
+      /** perm[v] = takım indeksi (0–9) fikstür köşesi v'de */
+      function buildSchedule(perm) {
+        const weeks = [];
+        for (let wi = 0; wi < 3; wi++) {
+          const round = [];
+          for (const [u, v] of BASE_ROUNDS[wi]) {
+            const ta = perm[u];
+            const tb = perm[v];
+            let home = ta;
+            let away = tb;
+            if (Math.random() < 0.5) {
+              home = tb;
+              away = ta;
+            }
+            round.push({ week: wi + 1, home, away, u, v });
+          }
+          weeks.push(round);
+        }
+        return weeks;
+      }
+
+      function neighborInWeek(vertex, weekIndex) {
+        for (const [a, b] of BASE_ROUNDS[weekIndex]) {
+          if (a === vertex) return b;
+          if (b === vertex) return a;
+        }
+        return -1;
+      }
+
+      const teamsGrid = document.getElementById("teamsGrid");
+      const btnDraw = document.getElementById("btnDraw");
+      const btnRandomNames = document.getElementById("btnRandomNames");
+      const drawStage = document.getElementById("drawStage");
+      const drawStrip = document.getElementById("drawStrip");
+      const drawStepHint = document.getElementById("drawStepHint");
+      const drawSessionHead = document.getElementById("drawSessionHead");
+      const drawOpponentsOut = document.getElementById("drawOpponentsOut");
+      const drawHistory = document.getElementById("drawHistory");
+      const btnKuraStep = document.getElementById("btnKuraStep");
+      const drawProgress = document.getElementById("drawProgress");
+      const btnShowFixture = document.getElementById("btnShowFixture");
+      const fixtureSection = document.getElementById("fixtureSection");
+      const tabWeeks = document.getElementById("tabWeeks");
+      const tabTeams = document.getElementById("tabTeams");
+      const teamPills = document.getElementById("teamPills");
+      const teamFixtureBody = document.getElementById("teamFixtureBody");
+      const standBody = document.getElementById("standBody");
+      const fixtureTabs = document.getElementById("fixtureTabs");
+      const knockoutSection = document.getElementById("knockoutSection");
+      const bracketEl = document.getElementById("bracket");
+
+      let state = {
+        perm: null,
+        names: [],
+        weeks: null,
+        selectedTeamTab: 0,
+        knownOpp: null,
+        drawFocus: null,
+        ko: { sf1h: null, sf1a: null, sf2h: null, sf2a: null, f1: null, f2: null, sf1hs: "", sf1as: "", sf2hs: "", sf2as: "", fhs: "", fas: "" },
+      };
+
+      function vertexForTeam(perm, teamIdx) {
+        for (let v = 0; v < 10; v++) {
+          if (perm[v] === teamIdx) return v;
+        }
+        return 0;
+      }
+
+      function buildInputs() {
+        teamsGrid.innerHTML = "";
+        for (let i = 0; i < 10; i++) {
+          const div = document.createElement("div");
+          div.className = "team-input";
+          div.innerHTML =
+            '<label for="t' + i + '">Takım ' + (i + 1) + "</label>" +
+            '<input type="text" id="t' + i + '" maxlength="40" placeholder="İsim…" />';
+          teamsGrid.appendChild(div);
+        }
+        DEFAULT_NAMES.forEach((n, i) => {
+          const inp = document.getElementById("t" + i);
+          if (inp) inp.value = n;
+        });
+      }
+
+      function readTeamNames() {
+        const names = [];
+        for (let i = 0; i < 10; i++) {
+          const inp = document.getElementById("t" + i);
+          const v = (inp && inp.value.trim()) || "Takım " + (i + 1);
+          names.push(v);
+        }
+        return names;
+      }
+
+      function randomNamePool() {
+        const cities = ["İzmir", "Bursa", "Antalya", "Trabzon", "Konya", "Adana", "Gaziantep", "Samsun", "Eskişehir", "Mersin"];
+        const suf = [" FK", " SK", " United", " City", "spor", " 1923", " Arena"];
+        const pool = [];
+        while (pool.length < 10) {
+          const c = cities[(Math.random() * cities.length) | 0];
+          const s = suf[(Math.random() * suf.length) | 0];
+          const n = c + s;
+          if (!pool.includes(n)) pool.push(n);
+        }
+        return pool;
+      }
+
+      btnRandomNames.addEventListener("click", () => {
+        const pool = randomNamePool();
+        pool.forEach((n, i) => {
+          const inp = document.getElementById("t" + i);
+          if (inp) inp.value = n;
+        });
+      });
+
+      function confettiBurst() {
+        const layer = document.createElement("div");
+        layer.className = "confetti";
+        const colors = ["#c9a227", "#fff", "#1e3a5f", "#3dd68c", "#c8d4e8"];
+        for (let i = 0; i < 60; i++) {
+          const s = document.createElement("span");
+          s.style.left = Math.random() * 100 + "%";
+          s.style.background = colors[(Math.random() * colors.length) | 0];
+          s.style.animationDuration = 2 + Math.random() * 2 + "s";
+          s.style.animationDelay = Math.random() * 0.3 + "s";
+          layer.appendChild(s);
+        }
+        document.body.appendChild(layer);
+        setTimeout(() => layer.remove(), 4000);
+      }
+
+      function escapeHtml(s) {
+        const d = document.createElement("div");
+        d.textContent = s;
+        return d.innerHTML;
+      }
+
+      function pairRevealProgress() {
+        if (!state.knownOpp) return 0;
+        let s = 0;
+        for (let i = 0; i < 10; i++) s += state.knownOpp[i].size;
+        return s / 30;
+      }
+
+      function setDrawProgressFromPairs() {
+        drawProgress.style.width = pairRevealProgress() * 100 + "%";
+      }
+
+      function missingWeeksForTeam(ti) {
+        const v = vertexForTeam(state.perm, ti);
+        const miss = [];
+        for (let wk = 0; wk < 3; wk++) {
+          const opp = state.perm[neighborInWeek(v, wk)];
+          if (!state.knownOpp[ti].has(opp)) miss.push(wk);
+        }
+        return miss;
+      }
+
+      function incompleteTeams() {
+        const r = [];
+        for (let t = 0; t < 10; t++) {
+          if (state.knownOpp[t].size < 3) r.push(t);
+        }
+        return r;
+      }
+
+      function registerOpponentPair(a, b) {
+        state.knownOpp[a].add(b);
+        state.knownOpp[b].add(a);
+      }
+
+      function weekSlotKnown(ti, wk) {
+        const v = vertexForTeam(state.perm, ti);
+        const opp = state.perm[neighborInWeek(v, wk)];
+        return state.knownOpp[ti].has(opp);
+      }
+
+      function renderDrawStrip() {
+        if (!drawStrip || !state.names || !state.knownOpp) return;
+        drawStrip.innerHTML = "";
+        for (let ti = 0; ti < 10; ti++) {
+          const row = document.createElement("div");
+          row.className = "draw-strip-row";
+          if (state.drawFocus === ti) row.classList.add("focus");
+          if (state.knownOpp[ti].size >= 3) row.classList.add("done");
+          let dots = "";
+          for (let wk = 0; wk < 3; wk++) {
+            const on = weekSlotKnown(ti, wk);
+            dots += '<span class="' + (on ? "on" : "") + '">' + (on ? "●" : "○") + "</span>";
+          }
+          row.innerHTML =
+            '<span class="strip-name">' +
+            escapeHtml(state.names[ti]) +
+            '</span><span class="strip-dots" title="Hafta 1–3">' +
+            dots +
+            "</span>";
+          drawStrip.appendChild(row);
+        }
+      }
+
+      function appendDrawHistoryComplete(teamIdx) {
+        const v = vertexForTeam(state.perm, teamIdx);
+        const opps = [0, 1, 2].map((wk) => state.perm[neighborInWeek(v, wk)]);
+        const line = document.createElement("div");
+        line.style.marginBottom = "0.35rem";
+        line.innerHTML =
+          "<strong>" +
+          escapeHtml(state.names[teamIdx]) +
+          "</strong> — rakipler: " +
+          opps.map((o) => escapeHtml(state.names[o])).join(" · ");
+        drawHistory.appendChild(line);
+      }
+
+      function finishDrawCompletely() {
+        state.drawFocus = null;
+        drawSessionHead.textContent = "Çekiliş bitti. Tüm eşleşmeler belli.";
+        drawStepHint.textContent = "Aşağıdan fikstüre geçebilirsiniz.";
+        btnKuraStep.disabled = true;
+        btnKuraStep.textContent = "Tamamlandı";
+        btnShowFixture.disabled = false;
+        setDrawProgressFromPairs();
+        renderDrawStrip();
+        confettiBurst();
+      }
+
+      function onKuraStep() {
+        if (!state.knownOpp || !state.perm) return;
+        if (btnKuraStep.disabled) return;
+
+        if (incompleteTeams().length === 0) {
+          finishDrawCompletely();
+          return;
+        }
+
+        if (state.drawFocus !== null) {
+          const miss = missingWeeksForTeam(state.drawFocus);
+          if (miss.length > 0) {
+            const wk = miss[0];
+            const v = vertexForTeam(state.perm, state.drawFocus);
+            const oppIdx = state.perm[neighborInWeek(v, wk)];
+            const focusTeam = state.drawFocus;
+            registerOpponentPair(focusTeam, oppIdx);
+            const card = document.createElement("div");
+            card.className = "draw-opp-card";
+            card.innerHTML =
+              '<div class="wk">Hafta ' +
+              (wk + 1) +
+              " · Rakip</div>" +
+              '<div class="nm">' +
+              escapeHtml(state.names[oppIdx]) +
+              "</div>";
+            drawOpponentsOut.appendChild(card);
+            setDrawProgressFromPairs();
+            renderDrawStrip();
+
+            if (missingWeeksForTeam(focusTeam).length === 0) appendDrawHistoryComplete(focusTeam);
+            if (missingWeeksForTeam(oppIdx).length === 0 && oppIdx !== focusTeam) appendDrawHistoryComplete(oppIdx);
+
+            if (missingWeeksForTeam(focusTeam).length === 0) {
+              state.drawFocus = null;
+              drawSessionHead.textContent = "Bu tur tamam. “Kura çek” ile yeni torba takımı.";
+              drawStepHint.textContent =
+                incompleteTeams().length === 0
+                  ? "Tüm eşleşmeler belli. Bir kez daha “Kura çek” veya doğrudan fikstüre geçin."
+                  : "Tekrar “Kura çek” — rastgele sıradaki eksik takım.";
+            } else {
+              const left = missingWeeksForTeam(focusTeam).length;
+              drawSessionHead.textContent = state.names[focusTeam] + " — kalan " + left + " rakip. Aynı düğmeye devam.";
+            }
+            if (incompleteTeams().length === 0) finishDrawCompletely();
+            return;
+          }
+          state.drawFocus = null;
+        }
+
+        const pool = incompleteTeams();
+        if (pool.length === 0) {
+          finishDrawCompletely();
+          return;
+        }
+        const ti = pool[(Math.random() * pool.length) | 0];
+        state.drawFocus = ti;
+        drawOpponentsOut.innerHTML = "";
+        drawSessionHead.innerHTML =
+          '<span style="color:var(--muted);font-size:0.85rem;display:block;margin-bottom:0.35rem">Torbadan çıkan</span>' +
+          '<span style="font-size:1.35rem;font-weight:700;color:var(--gold);letter-spacing:0.04em">' +
+          escapeHtml(state.names[ti]) +
+          "</span>";
+        const miss = missingWeeksForTeam(ti);
+        drawStepHint.textContent =
+          miss.length === 3
+            ? "Üç rakip de sırada. “Kura çek” ile hafta 1, 2, 3 rakiplerini sırayla açın."
+            : miss.length === 2
+              ? "İki rakip henüz kapalı (biri veya ikisi önceki torbada belli olmuştu). “Kura çek” ile sırayla açın."
+              : "Son rakip kaldı — bir kez daha “Kura çek”.";
+        renderDrawStrip();
+      }
+
+      function initInteractiveDraw(perm, names) {
+        state.knownOpp = Array.from({ length: 10 }, () => new Set());
+        state.drawFocus = null;
+        btnShowFixture.disabled = true;
+        btnKuraStep.disabled = false;
+        btnKuraStep.textContent = "Kura çek";
+        setDrawProgressFromPairs();
+        drawHistory.innerHTML = "";
+        drawOpponentsOut.innerHTML = "";
+        drawSessionHead.textContent = "Hazır. Torba için “Kura çek”e basın.";
+        drawStepHint.textContent =
+          "Her basış: önce rastgele takım, sonra aynı düğmeyle eksik rakipler (● solda dolar).";
+        renderDrawStrip();
+      }
+
+      function matchKey(week, home, away) {
+        return week + "-" + home + "-" + away;
+      }
+
+      function collectScores() {
+        const inputs = tabWeeks.querySelectorAll(".score-in");
+        const scores = {};
+        inputs.forEach((inp) => {
+          const w = +inp.dataset.w;
+          const h = +inp.dataset.home;
+          const a = +inp.dataset.away;
+          const k = matchKey(w, h, a);
+          const v = inp.value.trim();
+          scores[k] = v === "" ? null : Math.max(0, parseInt(v, 10) || 0);
+        });
+        return scores;
+      }
+
+      function computeStandings(names, weeks, scores) {
+        const n = names.length;
+        const o = { p: Array(n).fill(0), w: Array(n).fill(0), d: Array(n).fill(0), l: Array(n).fill(0), gf: Array(n).fill(0), ga: Array(n).fill(0) };
+        for (const round of weeks) {
+          for (const m of round) {
+            const k = matchKey(m.week, m.home, m.away);
+            const hs = scores[k];
+            const ka = matchKey(m.week, m.away, m.home);
+            const as = scores[ka];
+            if (hs == null || as == null) continue;
+            const hi = m.home;
+            const ai = m.away;
+            o.p[hi]++;
+            o.p[ai]++;
+            o.gf[hi] += hs;
+            o.ga[hi] += as;
+            o.gf[ai] += as;
+            o.ga[ai] += hs;
+            if (hs > as) {
+              o.w[hi]++;
+              o.l[ai]++;
+            } else if (hs < as) {
+              o.l[hi]++;
+              o.w[ai]++;
+            } else {
+              o.d[hi]++;
+              o.d[ai]++;
+            }
+          }
+        }
+        const pts = (i) => o.w[i] * 3 + o.d[i];
+        const gd = (i) => o.gf[i] - o.ga[i];
+        const rows = names.map((name, i) => ({ i, name, o: o.p[i], pts: pts(i), gd: gd(i), gf: o.gf[i] }));
+        rows.sort((a, b) => b.pts - a.pts || b.gd - a.gd || b.gf - a.gf || a.name.localeCompare(b.name));
+        return { rows, stats: o };
+      }
+
+      function renderStandings() {
+        if (!state.weeks || !state.names) return;
+        const scores = collectScores();
+        const { rows, stats: st } = computeStandings(state.names, state.weeks, scores);
+        standBody.innerHTML = "";
+        rows.forEach((r, rank) => {
+          const tr = document.createElement("tr");
+          if (rank < 4) tr.className = "top4";
+          const gd = st.gf[r.i] - st.ga[r.i];
+          tr.innerHTML =
+            "<td>" +
+            (rank + 1) +
+            "</td><td>" +
+            escapeHtml(r.name) +
+            "</td><td>" +
+            st.p[r.i] +
+            "</td><td>" +
+            st.w[r.i] +
+            "</td><td>" +
+            st.d[r.i] +
+            "</td><td>" +
+            st.l[r.i] +
+            "</td><td>" +
+            st.gf[r.i] +
+            "</td><td>" +
+            st.ga[r.i] +
+            "</td><td>" +
+            (gd >= 0 ? "+" : "") +
+            gd +
+            "</td><td><strong>" +
+            (st.w[r.i] * 3 + st.d[r.i]) +
+            "</strong></td>";
+          standBody.appendChild(tr);
+        });
+        updateKnockout(rows);
+      }
+
+      function koPairSig() {
+        const k = state.ko;
+        return [k.sf1h, k.sf1a, k.sf2h, k.sf2a].join("-");
+      }
+
+      function updateKnockout(orderedRows, forceFullRender) {
+        if (!orderedRows || orderedRows.length < 4) return;
+        const a = orderedRows[0].i;
+        const b = orderedRows[1].i;
+        const c = orderedRows[2].i;
+        const d = orderedRows[3].i;
+        const nextSig = [a, d, b, c].join("-");
+        const prevSig = koPairSig();
+        state.ko.sf1h = a;
+        state.ko.sf1a = d;
+        state.ko.sf2h = b;
+        state.ko.sf2a = c;
+        if (prevSig !== nextSig || forceFullRender) {
+          state.ko.sf1hs = "";
+          state.ko.sf1as = "";
+          state.ko.sf2hs = "";
+          state.ko.sf2as = "";
+          state.ko.fhs = "";
+          state.ko.fas = "";
+        }
+        const s1 = koWinner(state.ko.sf1h, state.ko.sf1a, state.ko.sf1hs, state.ko.sf1as);
+        const s2 = koWinner(state.ko.sf2h, state.ko.sf2a, state.ko.sf2hs, state.ko.sf2as);
+        if (s1 !== null && s2 !== null) {
+          state.ko.f1 = s1;
+          state.ko.f2 = s2;
+        } else {
+          state.ko.f1 = null;
+          state.ko.f2 = null;
+        }
+        if (prevSig !== nextSig || forceFullRender) renderBracket();
+        else refreshKoChampOnly();
+      }
+
+      function koWinner(hi, ai, hs, as) {
+        const h = parseInt(hs, 10);
+        const a = parseInt(as, 10);
+        if (hs === "" || as === "" || isNaN(h) || isNaN(a)) return null;
+        if (h > a) return hi;
+        if (a > h) return ai;
+        return null;
+      }
+
+      function refreshKoChampOnly() {
+        const n = state.names;
+        const k = state.ko;
+        const nm = (i) => escapeHtml(n[i]);
+        const sf1Done = koWinner(k.sf1h, k.sf1a, k.sf1hs, k.sf1as);
+        const sf2Done = koWinner(k.sf2h, k.sf2a, k.sf2hs, k.sf2as);
+        let f1i = sf1Done;
+        let f2i = sf2Done;
+        const fhEl = document.getElementById("fh");
+        const faEl = document.getElementById("fa");
+        const elH = document.getElementById("koFinalHome");
+        const elA = document.getElementById("koFinalAway");
+        if (elH && elA) {
+          elH.textContent = f1i != null ? n[f1i] : "—";
+          elA.textContent = f2i != null ? n[f2i] : "—";
+        }
+        if (fhEl && faEl) {
+          const ok = f1i != null && f2i != null;
+          fhEl.disabled = !ok;
+          faEl.disabled = !ok;
+        }
+        const champ = f1i != null && f2i != null ? koWinner(f1i, f2i, k.fhs, k.fas) : null;
+        const foot = document.getElementById("koChampFoot");
+        if (foot) {
+          foot.innerHTML =
+            champ !== null
+              ? '<p style="margin-top:0.85rem;font-weight:700;color:var(--gold)">Şampiyon: ' + nm(champ) + "</p>"
+              : '<p style="margin-top:0.75rem;font-size:0.8rem;color:var(--muted)">Yarı finalleri ve gerekirse finali skorlayın. Beraberlikte otomatik şampiyon seçilmez.</p>';
+        }
+      }
+
+      function renderBracket() {
+        const n = state.names;
+        if (!n) return;
+        const k = state.ko;
+        knockoutSection.classList.add("visible");
+        const nm = (i) => escapeHtml(n[i]);
+
+        const sf1Done = koWinner(k.sf1h, k.sf1a, k.sf1hs, k.sf1as);
+        const sf2Done = koWinner(k.sf2h, k.sf2a, k.sf2hs, k.sf2as);
+        let f1i = k.f1;
+        let f2i = k.f2;
+        if (sf1Done !== null && sf2Done !== null) {
+          f1i = sf1Done;
+          f2i = sf2Done;
+        }
+        const champ = f1i != null && f2i != null ? koWinner(f1i, f2i, k.fhs, k.fas) : null;
+
+        bracketEl.innerHTML =
+          '<div class="bracket-row">' +
+          '<div class="ko-card"><h4>Yarı final 1</h4><div class="ko-match">' +
+          '<div class="ko-team">' +
+          nm(k.sf1h) +
+          "</div>" +
+          '<div class="ko-team">' +
+          nm(k.sf1a) +
+          '</div><div class="ko-scores"><input class="score-in" type="number" min="0" id="sf1h" placeholder="0" value="' +
+          escapeHtml(k.sf1hs) +
+          '" />' +
+          '<span class="vs-pill">VS</span>' +
+          '<input class="score-in" type="number" min="0" id="sf1a" placeholder="0" value="' +
+          escapeHtml(k.sf1as) +
+          '" /></div></div></div>' +
+          '<div class="ko-card"><h4>Yarı final 2</h4><div class="ko-match">' +
+          '<div class="ko-team">' +
+          nm(k.sf2h) +
+          "</div>" +
+          '<div class="ko-team">' +
+          nm(k.sf2a) +
+          '</div><div class="ko-scores"><input class="score-in" type="number" min="0" id="sf2h" placeholder="0" value="' +
+          escapeHtml(k.sf2hs) +
+          '" />' +
+          '<span class="vs-pill">VS</span>' +
+          '<input class="score-in" type="number" min="0" id="sf2a" placeholder="0" value="' +
+          escapeHtml(k.sf2as) +
+          '" /></div></div></div></div>' +
+          '<div class="ko-card" style="max-width:420px;margin:0 auto"><h4>Final</h4><div class="ko-match">' +
+          '<div class="ko-team" id="koFinalHome">' +
+          (f1i != null ? nm(f1i) : "—") +
+          "</div>" +
+          '<div class="ko-team" id="koFinalAway">' +
+          (f2i != null ? nm(f2i) : "—") +
+          '</div><div class="ko-scores"><input class="score-in" type="number" min="0" id="fh" placeholder="0" value="' +
+          escapeHtml(k.fhs) +
+          '"' +
+          (f1i == null ? " disabled" : "") +
+          ' />' +
+          '<span class="vs-pill">VS</span>' +
+          '<input class="score-in" type="number" min="0" id="fa" placeholder="0" value="' +
+          escapeHtml(k.fas) +
+          '"' +
+          (f2i == null ? " disabled" : "") +
+          ' /></div>' +
+          '<div id="koChampFoot">' +
+            (champ !== null
+              ? '<p style="margin-top:0.85rem;font-weight:700;color:var(--gold)">Şampiyon: ' + nm(champ) + "</p>"
+              : '<p style="margin-top:0.75rem;font-size:0.8rem;color:var(--muted)">Yarı finalleri ve gerekirse finali skorlayın. Beraberlikte otomatik şampiyon seçilmez.</p>') +
+            "</div></div></div>";
+      }
+
+      const KO_INPUT_MAP = { sf1h: "sf1hs", sf1a: "sf1as", sf2h: "sf2hs", sf2a: "sf2as", fh: "fhs", fa: "fas" };
+      bracketEl.addEventListener("input", function (e) {
+        const t = e.target;
+        if (!t.id || !KO_INPUT_MAP[t.id]) return;
+        state.ko[KO_INPUT_MAP[t.id]] = t.value;
+        refreshKoChampOnly();
+      });
+
+      function renderFixtureUi() {
+        const names = state.names;
+        const weeks = state.weeks;
+        if (!names || !weeks) return;
+
+        tabWeeks.innerHTML = "";
+        weeks.forEach((round, ri) => {
+          const md = document.createElement("div");
+          md.className = "matchday";
+          const head = document.createElement("div");
+          head.className = "matchday-head";
+          head.textContent = "Hafta " + (ri + 1) + " · 5 maç (herkes oynar)";
+          md.appendChild(head);
+          round.forEach((m) => {
+            const row = document.createElement("div");
+            row.className = "match-row";
+            const ih = "s-" + m.week + "-" + m.home + "-" + m.away;
+            row.innerHTML =
+              '<span class="home">' +
+              escapeHtml(names[m.home]) +
+              '</span><input class="score-in" type="number" min="0" id="' +
+              ih +
+              '" data-w="' +
+              m.week +
+              '" data-home="' +
+              m.home +
+              '" data-away="' +
+              m.away +
+              '" /><span class="vs-pill">VS</span><input class="score-in" type="number" min="0" data-w="' +
+              m.week +
+              '" data-home="' +
+              m.away +
+              '" data-away="' +
+              m.home +
+              '" /><span class="away">' +
+              escapeHtml(names[m.away]) +
+              "</span>";
+            const inputs = row.querySelectorAll(".score-in");
+            inputs[0].addEventListener("input", renderStandings);
+            inputs[1].addEventListener("input", renderStandings);
+            md.appendChild(row);
+          });
+          tabWeeks.appendChild(md);
+        });
+
+        teamPills.innerHTML = "";
+        names.forEach((name, ti) => {
+          const b = document.createElement("button");
+          b.type = "button";
+          b.textContent = name;
+          if (ti === state.selectedTeamTab) b.classList.add("active");
+          b.addEventListener("click", () => {
+            state.selectedTeamTab = ti;
+            teamPills.querySelectorAll("button").forEach((x, j) => x.classList.toggle("active", j === ti));
+            renderTeamTab(ti);
+          });
+          teamPills.appendChild(b);
+        });
+        renderTeamTab(state.selectedTeamTab);
+        renderStandings();
+      }
+
+      function renderTeamTab(teamId) {
+        const names = state.names;
+        const weeks = state.weeks;
+        teamFixtureBody.innerHTML = "";
+        if (!weeks) return;
+        const list = [];
+        for (const round of weeks) {
+          for (const m of round) {
+            if (m.home === teamId) list.push({ week: m.week, opp: m.away, home: true });
+            else if (m.away === teamId) list.push({ week: m.week, opp: m.home, home: false });
+          }
+        }
+        list.sort((a, b) => a.week - b.week);
+        list.forEach((x) => {
+          const row = document.createElement("div");
+          row.className = "tf-row";
+          const side = x.home ? "Ev sahibi" : "Deplasman";
+          row.innerHTML =
+            '<span class="tf-wk">H' +
+            x.week +
+            '</span><span><strong>' +
+            escapeHtml(names[x.opp]) +
+            '</strong><span style="display:block;font-size:0.72rem;color:var(--muted);margin-top:0.2rem">' +
+            side +
+            "</span></span>";
+          teamFixtureBody.appendChild(row);
+        });
+      }
+
+      fixtureTabs.addEventListener("click", (e) => {
+        const btn = e.target.closest("button[data-tab]");
+        if (!btn) return;
+        const tab = btn.getAttribute("data-tab");
+        fixtureTabs.querySelectorAll("button").forEach((b) => b.classList.toggle("active", b === btn));
+        document.getElementById("tabWeeks").classList.toggle("active", tab === "weeks");
+        document.getElementById("tabTeams").classList.toggle("active", tab === "teams");
+      });
+
+      btnDraw.addEventListener("click", () => {
+        const names = readTeamNames();
+        const perm = shuffle([0, 1, 2, 3, 4, 5, 6, 7, 8, 9]);
+        state.perm = perm;
+        state.names = names;
+        state.weeks = buildSchedule(perm);
+        state.selectedTeamTab = 0;
+        state.ko = { sf1h: null, sf1a: null, sf2h: null, sf2a: null, f1: null, f2: null, sf1hs: "", sf1as: "", sf2hs: "", sf2as: "", fhs: "", fas: "" };
+
+        drawStage.classList.add("active");
+        fixtureSection.classList.remove("visible");
+        knockoutSection.classList.remove("visible");
+        tabWeeks.innerHTML = "";
+        standBody.innerHTML = "";
+        bracketEl.innerHTML = "";
+
+        drawStage.scrollIntoView({ behavior: "smooth", block: "start" });
+        initInteractiveDraw(perm, names);
+      });
+
+      btnKuraStep.addEventListener("click", onKuraStep);
+
+      btnShowFixture.addEventListener("click", () => {
+        if (!state.weeks || !state.names) return;
+        fixtureSection.classList.add("visible");
+        knockoutSection.classList.add("visible");
+        renderFixtureUi();
+        fixtureSection.scrollIntoView({ behavior: "smooth", block: "start" });
+      });
+
+      buildInputs();
+    })();
+  </script>
+</body>
+</html>

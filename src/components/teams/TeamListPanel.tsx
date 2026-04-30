@@ -57,6 +57,13 @@ export function TeamListPanel({
             <li key={t.id}>
               {(() => {
                 const s = summaries?.[t.id];
+                const stats = s
+                  ? `${s.played} maç · ${s.goals_for}G ${s.yellow_cards}S ${s.red_cards}K`
+                  : "";
+                const sub =
+                  t.faculty_name && t.faculty_name !== t.name
+                    ? [t.faculty_name, stats].filter(Boolean).join(" · ")
+                    : stats;
                 return (
               <button
                 type="button"
@@ -70,10 +77,7 @@ export function TeamListPanel({
                 </span>
                 <span className="team-item__body">
                   <span className="team-item__name">{t.name}</span>
-                  <span className="team-item__meta">
-                    {t.faculty_name}
-                    {s ? ` · ${s.played} maç · ${s.goals_for}G ${s.yellow_cards}S ${s.red_cards}K` : ""}
-                  </span>
+                  <span className="team-item__meta">{sub || "\u00a0"}</span>
                 </span>
               </button>
                 );

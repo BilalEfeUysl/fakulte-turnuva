@@ -1,10 +1,8 @@
 type Props = {
   editTeamId: number | null;
   formName: string;
-  formFaculty: string;
   formNotes: string;
   onNameChange: (v: string) => void;
-  onFacultyChange: (v: string) => void;
   onNotesChange: (v: string) => void;
   onSubmit: (e: React.FormEvent) => void;
   onCancelEdit: () => void;
@@ -15,10 +13,8 @@ type Props = {
 export function TeamFormPanel({
   editTeamId,
   formName,
-  formFaculty,
   formNotes,
   onNameChange,
-  onFacultyChange,
   onNotesChange,
   onSubmit,
   onCancelEdit,
@@ -46,16 +42,6 @@ export function TeamFormPanel({
           <input
             value={formName}
             onChange={(e) => onNameChange(e.target.value)}
-            placeholder="Örn. Mühendislik FC"
-            autoComplete="off"
-            disabled={freeze}
-          />
-        </label>
-        <label>
-          Fakülte
-          <input
-            value={formFaculty}
-            onChange={(e) => onFacultyChange(e.target.value)}
             placeholder="Örn. Mühendislik Fakültesi"
             autoComplete="off"
             disabled={freeze}

@@ -18,6 +18,7 @@ export function updateMatchSchedule(input: {
   id: number;
   matchdayNo: number;
   scheduledDate: string | null;
+  scheduledTime?: string | null;
   calendarSlot: number;
 }): Promise<void> {
   return invoke<void>("update_match_schedule", { payload: input });
@@ -34,9 +35,13 @@ export function addMatchEvent(input: {
 }
 
 export function listMatchEvents(matchId: number): Promise<MatchEventRow[]> {
-  return invoke<MatchEventRow[]>("list_match_events", { args: { matchId } });
+  return invoke<MatchEventRow[]>("list_match_events", { matchId });
 }
 
 export function deleteMatchEvent(id: number): Promise<void> {
   return invoke<void>("delete_match_event", { payload: { id } });
+}
+
+export function resetMatch(matchId: number): Promise<void> {
+  return invoke<void>("reset_match", { matchId });
 }
