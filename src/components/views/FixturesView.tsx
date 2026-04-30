@@ -1,4 +1,4 @@
-import { useMemo, useState } from "react";
+import { useMemo } from "react";
 import type { MatchRow } from "../../types/tournament";
 import type { TournamentAppState } from "../../hooks/useTournamentApp";
 

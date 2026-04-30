@@ -98,15 +98,6 @@ export function DrawView({ app }: { app: TournamentAppState }) {
 
   const isRevealing = leagueMatches.length > 0 && !leagueDrawCompleted;
 
-  const incompleteTeamIds = useMemo(() => {
-    if (leagueMatches.length === 0) return [];
-    const ids: number[] = [];
-    for (const t of teams) {
-      const size = knownOppSets[t.id]?.size ?? 0;
-      if (size < effectiveWeeksCount) ids.push(t.id);
-    }
-    return ids;
-  }, [leagueMatches.length, teams, knownOppSets, effectiveWeeksCount]);
 
   const totalKnownOppCount = useMemo(() => {
     let sum = 0;
