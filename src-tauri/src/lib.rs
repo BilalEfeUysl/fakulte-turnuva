@@ -32,6 +32,8 @@ pub fn run() {
             commands::tournament::auto_schedule_group_matches,
             commands::tournament::get_standings,
             commands::tournament::reset_all,
+            commands::tournament::reset_teams,
+            commands::matches::add_match,
             commands::matches::list_matches,
             commands::matches::update_match,
             commands::matches::update_match_schedule,

@@ -341,7 +341,7 @@ export function useTournamentApp() {
       await tournamentApi.runDraw();
       await loadAll();
       setSuccessMessage("Kura tamamlandı.");
-      setView("draw");
+      setView("fixtures");
     } catch (e) {
       setError(String(e));
     } finally {
@@ -409,6 +409,22 @@ export function useTournamentApp() {
       setMatchSheetId(null);
       await loadAll();
       setSuccessMessage("Turnuva sıfırlandı. Takımlar korundu.");
+    } catch (e) {
+      setError(String(e));
+    } finally {
+      setDrawRunning(false);
+    }
+  }, [loadAll]);
+
+  const resetTeamsAction = useCallback(async () => {
+    setError(null);
+    setDrawRunning(true);
+    try {
+      await tournamentApi.resetTeams();
+      setMatchSheetId(null);
+      setSelectedId(null);
+      await loadAll();
+      setSuccessMessage("Tüm takımlar ve turnuva verisi silindi.");
     } catch (e) {
       setError(String(e));
     } finally {
@@ -531,6 +547,27 @@ export function useTournamentApp() {
     }
   }, [loadAll, matchSheetId]);
 
+  const addMatchAction = useCallback(
+    async (input: {
+      homeTeamId: number;
+      awayTeamId: number;
+      stage: string;
+      matchDate: string | null;
+      matchTime: string | null;
+    }) => {
+      setError(null);
+      try {
+        await matchApi.addMatch(input);
+        setSuccessMessage("Maç eklendi.");
+        await loadAll();
+      } catch (e) {
+        setError(String(e));
+        throw e;
+      }
+    },
+    [loadAll],
+  );
+
   const removeEvent = useCallback(
     async (id: number) => {
       setError(null);
@@ -629,6 +666,7 @@ export function useTournamentApp() {
     runDrawAction,
     runLeagueDrawAction,
     resetAllAction,
+    resetTeamsAction,
     moveGroupTeam,
     regenerateFixturesAction,
     updateDailyLimit,
@@ -654,6 +692,7 @@ export function useTournamentApp() {
     addEvent,
     removeEvent,
     loadAll,
+    addMatchAction,
   };
 }
 

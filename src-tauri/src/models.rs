@@ -126,6 +126,16 @@ pub struct GroupStandings {
 
 #[derive(Debug, Deserialize)]
 #[serde(rename_all = "camelCase")]
+pub struct CreateMatchPayload {
+    pub home_team_id: i64,
+    pub away_team_id: i64,
+    pub stage: String,
+    pub match_date: Option<String>,
+    pub match_time: Option<String>,
+}
+
+#[derive(Debug, Deserialize)]
+#[serde(rename_all = "camelCase")]
 pub struct UpdateMatchPayload {
     pub id: i64,
     pub home_score: i64,

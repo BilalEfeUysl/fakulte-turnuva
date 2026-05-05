@@ -49,7 +49,7 @@ export function TeamListPanel({
       ) : teams.length === 0 ? (
         <div className="empty-state">
           <strong>Henüz takım eklenmedi</strong>
-          Soldaki karttan ilk takımınızı oluşturun; sonra buradan seçip kadroyu doldurun.
+          Yönetim sekmesinden takım ekleyin; sonra buradan seçip kadroyu doldurun.
         </div>
       ) : (
         <ul className="team-list">

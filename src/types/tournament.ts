@@ -91,4 +91,6 @@ export type PlayerSummaryRow = {
   matches: number;
 };
 
-export type AppView = "home" | "teams" | "draw" | "fixtures" | "standings" | "scorers";
+export type MatchStage = "Gün 1" | "Gün 2" | "Gün 3" | "Playoff" | "Yarı Final" | "Final";
+
+export type AppView = "home" | "teams" | "management" | "fixtures" | "standings" | "scorers";

@@ -52,3 +52,7 @@ export function autoScheduleGroupMatches(startDate: string): Promise<void> {
 export function resetAll(): Promise<void> {
   return invoke<void>("reset_all");
 }
+
+export function resetTeams(): Promise<void> {
+  return invoke<void>("reset_teams");
+}

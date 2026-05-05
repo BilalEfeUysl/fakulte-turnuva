@@ -1,11 +1,90 @@
 use crate::db::DbConn;
 use crate::models::{
-    AddMatchEventPayload, DeleteEventPayload, MatchEventRow, MatchRow, UpdateMatchPayload,
-    UpdateMatchSchedulePayload,
+    AddMatchEventPayload, CreateMatchPayload, DeleteEventPayload, MatchEventRow, MatchRow,
+    UpdateMatchPayload, UpdateMatchSchedulePayload,
 };
 use rusqlite::params;
 
 
+
+#[tauri::command]
+pub fn add_match(db: tauri::State<DbConn>, payload: CreateMatchPayload) -> Result<MatchRow, String> {
+    if payload.home_team_id == payload.away_team_id {
+        return Err("Ev sahibi ve deplasman takımı aynı olamaz.".into());
+    }
+    let stage = payload.stage.trim().to_string();
+    if stage.is_empty() {
+        return Err("Aşama boş olamaz.".into());
+    }
+    let conn = db.0.lock().map_err(|e| e.to_string())?;
+
+    let group_id: i64 = match conn.query_row(
+        "SELECT id FROM groups WHERE name = 'Manuel'",
+        [],
+        |r| r.get(0),
+    ) {
+        Ok(id) => id,
+        Err(_) => {
+            conn.execute(
+                "INSERT INTO groups (name, sort_order) VALUES ('Manuel', 99)",
+                [],
+            )
+            .map_err(|e| e.to_string())?;
+            conn.last_insert_rowid()
+        }
+    };
+
+    conn.execute(
+        "INSERT INTO matches (group_id, home_team_id, away_team_id, stage, stage_slot, \
+         match_order, scheduled_date, scheduled_time, status) \
+         VALUES (?1, ?2, ?3, ?4, '', 0, ?5, ?6, 'scheduled')",
+        params![
+            group_id,
+            payload.home_team_id,
+            payload.away_team_id,
+            stage,
+            payload.match_date,
+            payload.match_time,
+        ],
+    )
+    .map_err(|e| e.to_string())?;
+
+    let id = conn.last_insert_rowid();
+    conn.query_row(
+        "SELECT m.id, m.group_id, g.name, m.stage, m.stage_slot, m.home_team_id, m.away_team_id, \
+         th.name, ta.name, m.match_order, m.matchday_no, m.scheduled_date, m.scheduled_time, m.calendar_slot, \
+         m.status, m.home_score, m.away_score, m.played_at \
+         FROM matches m \
+         JOIN groups g ON g.id = m.group_id \
+         JOIN teams th ON th.id = m.home_team_id \
+         JOIN teams ta ON ta.id = m.away_team_id \
+         WHERE m.id = ?1",
+        params![id],
+        |row| {
+            Ok(MatchRow {
+                id: row.get(0)?,
+                group_id: row.get(1)?,
+                group_name: row.get(2)?,
+                stage: row.get(3)?,
+                stage_slot: row.get(4)?,
+                home_team_id: row.get(5)?,
+                away_team_id: row.get(6)?,
+                home_team_name: row.get(7)?,
+                away_team_name: row.get(8)?,
+                match_order: row.get(9)?,
+                matchday_no: row.get(10)?,
+                scheduled_date: row.get(11)?,
+                scheduled_time: row.get(12)?,
+                calendar_slot: row.get(13)?,
+                status: row.get(14)?,
+                home_score: row.get(15)?,
+                away_score: row.get(16)?,
+                played_at: row.get(17)?,
+            })
+        },
+    )
+    .map_err(|e| e.to_string())
+}
 
 #[tauri::command]
 pub fn list_matches(db: tauri::State<DbConn>) -> Result<Vec<MatchRow>, String> {

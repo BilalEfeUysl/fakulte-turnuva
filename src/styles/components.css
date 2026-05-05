@@ -30,14 +30,14 @@
   gap: 1.35rem;
 }
 
-.members-panel {
-  grid-column: 1 / -1;
-}
-
 @media (min-width: 880px) {
   .layout {
     grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
     align-items: start;
+  }
+
+  .layout > .members-panel {
+    grid-column: 1 / -1;
   }
 }
 
@@ -47,7 +47,7 @@
     align-items: stretch;
   }
 
-  .members-panel {
+  .layout > .members-panel {
     grid-column: auto;
   }
 }
@@ -124,7 +124,8 @@ label {
 }
 
 input,
-textarea {
+textarea,
+select {
   font: inherit;
   font-size: 0.95rem;
   font-weight: 500;
@@ -136,6 +137,20 @@ textarea {
   transition: border-color var(--transition), box-shadow var(--transition);
 }
 
+select {
+  appearance: none;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'%3E%3Cpath fill='%23888' d='M6 8L1 3h10z'/%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right 0.75rem center;
+  padding-right: 2.25rem;
+  cursor: pointer;
+}
+
+select option {
+  background: var(--surface-elevated);
+  color: var(--text);
+}
+
 input::placeholder,
 textarea::placeholder {
   color: var(--text-secondary);
@@ -144,12 +159,14 @@ textarea::placeholder {
 }
 
 input:hover,
-textarea:hover {
+textarea:hover,
+select:hover {
   border-color: var(--border-strong);
 }
 
 input:focus,
-textarea:focus {
+textarea:focus,
+select:focus {
   outline: none;
   border-color: var(--accent);
   box-shadow: 0 0 0 3px var(--accent-muted);
@@ -240,7 +257,7 @@ button:disabled {
   display: flex;
   flex-direction: column;
   gap: 0.55rem;
-  max-height: min(52vh, 380px);
+  max-height: min(68vh, 520px);
   overflow: auto;
   padding-right: 2px;
   scrollbar-width: thin;
@@ -700,6 +717,29 @@ button.danger-filled:hover:not(:disabled) {
   display: grid;
   place-items: center;
   flex-shrink: 0;
+}
+
+/* —— Team badge (color + kısaltma simgesi) —— */
+.team-badge {
+  display: inline-grid;
+  place-items: center;
+  border-radius: var(--radius-sm);
+  font-weight: 700;
+  letter-spacing: -0.02em;
+  flex-shrink: 0;
+  line-height: 1;
+}
+
+.team-badge--md {
+  width: 2.25rem;
+  height: 2.25rem;
+  font-size: 0.82rem;
+}
+
+.team-badge--sm {
+  width: 1.7rem;
+  height: 1.7rem;
+  font-size: 0.65rem;
 }
 
 @keyframes toast-in {

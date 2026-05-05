@@ -3,7 +3,7 @@ import type { AppView } from "../../types/tournament";
 const TABS: { id: AppView; label: string }[] = [
   { id: "home", label: "Ana Sayfa" },
   { id: "teams", label: "Takımlar" },
-  { id: "draw", label: "Kura" },
+  { id: "management", label: "Yönetim" },
   { id: "fixtures", label: "Takvim/Fikstür" },
   { id: "standings", label: "Puan Tablosu" },
   { id: "scorers", label: "Gol Kralı" },

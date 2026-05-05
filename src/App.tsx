@@ -6,7 +6,7 @@ import { ConfirmDialog } from "./components/ui/ConfirmDialog";
 import { MatchSheet } from "./components/match/MatchSheet";
 import { TeamsTabView } from "./components/views/TeamsTabView";
 import { HomeView } from "./components/views/HomeView";
-import { DrawView } from "./components/views/DrawView";
+import { ManagementView } from "./components/views/ManagementView";
 import { FixturesView } from "./components/views/FixturesView";
 import { StandingsView } from "./components/views/StandingsView";
 import { ScorersView } from "./components/views/ScorersView";
@@ -22,7 +22,7 @@ export default function App() {
         <Toast message={app.successMessage} />
         {app.view === "home" ? <HomeView app={app} /> : null}
         {app.view === "teams" ? <TeamsTabView app={app} /> : null}
-        {app.view === "draw" ? <DrawView app={app} /> : null}
+        {app.view === "management" ? <ManagementView app={app} /> : null}
         {app.view === "fixtures" ? <FixturesView app={app} /> : null}
         {app.view === "standings" ? <StandingsView app={app} /> : null}
         {app.view === "scorers" ? <ScorersView app={app} /> : null}

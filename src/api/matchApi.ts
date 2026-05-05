@@ -45,3 +45,13 @@ export function deleteMatchEvent(id: number): Promise<void> {
 export function resetMatch(matchId: number): Promise<void> {
   return invoke<void>("reset_match", { matchId });
 }
+
+export function addMatch(input: {
+  homeTeamId: number;
+  awayTeamId: number;
+  stage: string;
+  matchDate: string | null;
+  matchTime: string | null;
+}): Promise<MatchRow> {
+  return invoke<MatchRow>("add_match", { payload: input });
+}

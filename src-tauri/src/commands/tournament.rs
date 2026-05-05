@@ -938,6 +938,20 @@ pub fn get_standings(db: tauri::State<DbConn>) -> Result<Vec<GroupStandings>, St
     }
 
     let groups = get_groups_internal(&conn)?;
+
+    if groups.is_empty() {
+        let rows = standings_for_league(&conn)?;
+        return Ok(if rows.is_empty() {
+            vec![]
+        } else {
+            vec![GroupStandings {
+                group_id: 0,
+                group_name: "Genel".to_string(),
+                rows,
+            }]
+        });
+    }
+
     let mut result = Vec::new();
     for g in groups {
         let rows = standings_for_group(&conn, &g)?;
@@ -962,6 +976,22 @@ pub fn reset_all(db: tauri::State<DbConn>) -> Result<(), String> {
          DELETE FROM group_schedule_settings;
          DELETE FROM group_teams;
          DELETE FROM groups;",
+    )
+    .map_err(|e| e.to_string())
+}
+
+/// Her şeyi sıfırlar: takımlar, kadro, maçlar, gruplar dahil.
+#[tauri::command]
+pub fn reset_teams(db: tauri::State<DbConn>) -> Result<(), String> {
+    let conn = db.0.lock().map_err(|e| e.to_string())?;
+    conn.execute_batch(
+        "DELETE FROM match_events;
+         DELETE FROM matches;
+         DELETE FROM group_schedule_settings;
+         DELETE FROM group_teams;
+         DELETE FROM groups;
+         DELETE FROM team_members;
+         DELETE FROM teams;",
     )
     .map_err(|e| e.to_string())
 }
