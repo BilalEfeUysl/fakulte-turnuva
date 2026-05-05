@@ -9,6 +9,8 @@ export function createTeam(input: {
   name: string;
   facultyName: string;
   notes: string;
+  color: string;
+  shortName: string;
 }): Promise<Team> {
   return invoke<Team>("create_team", { payload: input });
 }
@@ -18,6 +20,8 @@ export function updateTeam(input: {
   name: string;
   facultyName: string;
   notes: string;
+  color: string;
+  shortName: string;
 }): Promise<void> {
   return invoke<void>("update_team", { payload: input });
 }

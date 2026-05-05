@@ -52,6 +52,8 @@ export function useTournamentApp() {
 
   const [formName, setFormName] = useState("");
   const [formNotes, setFormNotes] = useState("");
+  const [formColor, setFormColor] = useState("#14b8a6");
+  const [formShortName, setFormShortName] = useState("");
   const [editTeamId, setEditTeamId] = useState<number | null>(null);
 
   const [memberName, setMemberName] = useState("");
@@ -167,18 +169,24 @@ export function useTournamentApp() {
     setEditTeamId(t.id);
     setFormName(t.name);
     setFormNotes(t.notes);
+    setFormColor(t.color || "#14b8a6");
+    setFormShortName(t.short_name || "");
   }, []);
 
   const cancelEdit = useCallback(() => {
     setEditTeamId(null);
     setFormName("");
     setFormNotes("");
+    setFormColor("#14b8a6");
+    setFormShortName("");
   }, []);
 
   const clearTeamForm = useCallback(() => {
     setEditTeamId(null);
     setFormName("");
     setFormNotes("");
+    setFormColor("#14b8a6");
+    setFormShortName("");
   }, []);
 
   const submitTeam = useCallback(
@@ -191,13 +199,15 @@ export function useTournamentApp() {
         return;
       }
       const notes = formNotes.trim();
+      const color = formColor.trim() || "#14b8a6";
+      const shortName = formShortName.trim();
       setSavingTeam(true);
       try {
         if (editTeamId != null) {
-          await teamsApi.updateTeam({ id: editTeamId, name, facultyName: name, notes });
+          await teamsApi.updateTeam({ id: editTeamId, name, facultyName: name, notes, color, shortName });
           setSuccessMessage("Takım güncellendi.");
         } else {
-          await teamsApi.createTeam({ name, facultyName: name, notes });
+          await teamsApi.createTeam({ name, facultyName: name, notes, color, shortName });
           setSuccessMessage("Takım oluşturuldu.");
         }
         cancelEdit();
@@ -592,6 +602,10 @@ export function useTournamentApp() {
     setFormName,
     formNotes,
     setFormNotes,
+    formColor,
+    setFormColor,
+    formShortName,
+    setFormShortName,
     editTeamId,
     memberName,
     setMemberName,

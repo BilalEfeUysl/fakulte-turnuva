@@ -73,8 +73,8 @@ export function MembersPanel({
       ) : (
         <>
           <div className="team-detail">
-            <span className="team-detail__avatar" aria-hidden>
-              {initialsFromName(selected.name)}
+            <span className="team-detail__avatar" style={{ background: selected.color || "var(--arena-surface2)", color: selected.color ? "#fff" : "inherit" }} aria-hidden>
+              {selected.short_name || initialsFromName(selected.name)}
             </span>
             <div className="team-detail__text">
               <p className="team-detail__name">{selected.name}</p>

@@ -5,6 +5,8 @@ export type Team = {
   name: string;
   faculty_name: string;
   notes: string;
+  color: string;
+  short_name: string;
   created_at: string;
 };
 

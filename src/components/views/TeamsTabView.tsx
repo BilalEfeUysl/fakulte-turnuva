@@ -19,8 +19,12 @@ export function TeamsTabView({ app }: Props) {
           editTeamId={app.editTeamId}
           formName={app.formName}
           formNotes={app.formNotes}
+          formColor={app.formColor}
+          formShortName={app.formShortName}
           onNameChange={app.setFormName}
           onNotesChange={app.setFormNotes}
+          onColorChange={app.setFormColor}
+          onShortNameChange={app.setFormShortName}
           onSubmit={app.submitTeam}
           onCancelEdit={app.cancelEdit}
           disabled={app.savingTeam || app.loadingTeams}

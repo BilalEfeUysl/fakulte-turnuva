@@ -6,6 +6,8 @@ pub struct Team {
     pub name: String,
     pub faculty_name: String,
     pub notes: String,
+    pub color: String,
+    pub short_name: String,
     pub created_at: String,
 }
 
@@ -27,6 +29,14 @@ pub struct CreateTeamPayload {
     pub faculty_name: String,
     #[serde(default)]
     pub notes: String,
+    #[serde(default = "default_color")]
+    pub color: String,
+    #[serde(default)]
+    pub short_name: String,
+}
+
+fn default_color() -> String {
+    "#14b8a6".to_string()
 }
 
 #[derive(Debug, Deserialize)]
@@ -37,6 +47,10 @@ pub struct UpdateTeamPayload {
     pub faculty_name: String,
     #[serde(default)]
     pub notes: String,
+    #[serde(default = "default_color")]
+    pub color: String,
+    #[serde(default)]
+    pub short_name: String,
 }
 
 #[derive(Debug, Deserialize)]

@@ -2,8 +2,12 @@ type Props = {
   editTeamId: number | null;
   formName: string;
   formNotes: string;
+  formColor: string;
+  formShortName: string;
   onNameChange: (v: string) => void;
   onNotesChange: (v: string) => void;
+  onColorChange: (v: string) => void;
+  onShortNameChange: (v: string) => void;
   onSubmit: (e: React.FormEvent) => void;
   onCancelEdit: () => void;
   disabled?: boolean;
@@ -14,8 +18,12 @@ export function TeamFormPanel({
   editTeamId,
   formName,
   formNotes,
+  formColor,
+  formShortName,
   onNameChange,
   onNotesChange,
+  onColorChange,
+  onShortNameChange,
   onSubmit,
   onCancelEdit,
   disabled = false,
@@ -47,6 +55,29 @@ export function TeamFormPanel({
             disabled={freeze}
           />
         </label>
+        <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "1rem" }}>
+          <label>
+            Kısaltma
+            <input
+              value={formShortName}
+              onChange={(e) => onShortNameChange(e.target.value)}
+              placeholder="Örn. MÜH"
+              autoComplete="off"
+              maxLength={5}
+              disabled={freeze}
+            />
+          </label>
+          <label>
+            Takım Rengi
+            <input
+              type="color"
+              value={formColor}
+              onChange={(e) => onColorChange(e.target.value)}
+              disabled={freeze}
+              style={{ padding: "0 0.5rem", height: "42px" }}
+            />
+          </label>
+        </div>
         <label>
           Notlar (isteğe bağlı)
           <textarea

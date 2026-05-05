@@ -72,8 +72,8 @@ export function TeamListPanel({
                 aria-pressed={selectedId === t.id}
                 disabled={disabled}
               >
-                <span className="team-item__avatar" aria-hidden>
-                  {initialsFromName(t.name)}
+                <span className="team-item__avatar" style={{ background: t.color || "var(--arena-surface2)", color: t.color ? "#fff" : "inherit" }} aria-hidden>
+                  {t.short_name || initialsFromName(t.name)}
                 </span>
                 <span className="team-item__body">
                   <span className="team-item__name">{t.name}</span>
