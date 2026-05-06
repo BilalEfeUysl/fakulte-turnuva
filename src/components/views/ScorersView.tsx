@@ -15,14 +15,14 @@ export function ScorersView({ app }: Props) {
   if (scorers.length === 0) {
     return (
       <div className="empty-state">
-        <strong>Gol kralı tablosu boş</strong>
+        <strong>Gol lideri tablosu boş</strong>
       </div>
     );
   }
 
   return (
     <div>
-      <h2 style={{ margin: "0 0 1.25rem", fontSize: "1.35rem", fontWeight: 800 }}>Gol kralı</h2>
+      <h2 style={{ margin: "0 0 1.25rem", fontSize: "1.35rem", fontWeight: 800 }}>Gol lideri</h2>
       <div className="standings-card" style={{ maxWidth: 820 }}>
         <table className="standings-table">
           <thead>

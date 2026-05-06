@@ -23,3 +23,6 @@ Sen bu projenin kod yazıcısısın. Token tasarrufu sağlamak ve hızı artırm
 ## 4. Geliştirme Standartları
 - Rust tarafında yeni bir komut yazıldığında, bu komut mutlaka `src-tauri/src/main.rs` içinde `tauri::generate_handler!` kısmına eklenmelidir.
 - Frontend'de yeni bir özellik eklendiğinde TypeScript tipleri (Interfaces) katı bir şekilde kullanılmalıdır (`src/types/` altındaki tiplere sadık kalınacak).
+
+## 5. Versiyon Kontrol
+- Her prompt sonu kodlar üzerinde değişiklik olduysa uygun commit mesajıyla github'a pushla.

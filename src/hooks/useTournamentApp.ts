@@ -97,11 +97,10 @@ export function useTournamentApp() {
     setError(null);
     setLoadingTeams(true);
     try {
-      const [t, g, m, s, top, teamStats, settings] = await Promise.all([
+      const [t, g, m, top, teamStats, settings] = await Promise.all([
         teamsApi.listTeams(),
         tournamentApi.getGroups(),
         matchApi.listMatches(),
-        tournamentApi.getStandings(),
         tournamentApi.getTopScorers(),
         statsApi.getTeamSummaries(),
         tournamentApi.getGroupScheduleSettings(),
@@ -109,7 +108,6 @@ export function useTournamentApp() {
       setTeams(t);
       setGroups(g);
       setMatches(m);
-      setStandings(s);
       setScorers(top);
       setTeamSummaries(teamStats);
       setGroupSettings(settings);
@@ -117,6 +115,13 @@ export function useTournamentApp() {
       setError(String(e));
     } finally {
       setLoadingTeams(false);
+    }
+    // Standings ayrı yüklenir — hata olsa bile takımlar görünür
+    try {
+      const s = await tournamentApi.getStandings();
+      setStandings(s);
+    } catch {
+      // sessizce yoksay, frontend takımlardan fallback üretir
     }
   }, []);
 
@@ -171,6 +176,7 @@ export function useTournamentApp() {
     setFormNotes(t.notes);
     setFormColor(t.color || "#14b8a6");
     setFormShortName(t.short_name || "");
+    setView("management");
   }, []);
 
   const cancelEdit = useCallback(() => {
@@ -218,7 +224,7 @@ export function useTournamentApp() {
         setSavingTeam(false);
       }
     },
-    [cancelEdit, editTeamId, formName, formNotes, loadAll],
+    [cancelEdit, editTeamId, formName, formNotes, formColor, formShortName, loadAll],
   );
 
   const askDeleteTeam = useCallback((team: Team) => {

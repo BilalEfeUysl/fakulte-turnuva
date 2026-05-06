@@ -31,6 +31,7 @@ export function MatchSheet({ app }: Props) {
   const [scheduledDate, setScheduledDate] = useState("");
   const [scheduledTime, setScheduledTime] = useState("");
   const [dateSavedFeedback, setDateSavedFeedback] = useState(false);
+  const [confirmReset, setConfirmReset] = useState(false);
 
   useEffect(() => {
     if (!selectedMatch) return;
@@ -169,19 +170,43 @@ export function MatchSheet({ app }: Props) {
               </button>
             </div>
 
-            <button
-              type="button"
-              className="ghost"
-              style={{ width: "100%", marginTop: "1rem", color: "#ff4d4d", fontSize: "0.85rem", fontWeight: 600, border: "1px solid rgba(255,77,77,0.2)", borderRadius: "8px", padding: "0.5rem" }}
-              disabled={savingMatch}
-              onClick={() => {
-                if (window.confirm("Bu maçı sıfırlamak istediğinize emin misiniz? Skorbord 0-0 yapılacak ve girilen tüm GOL/KART olayları silinecektir.")) {
-                  void resetMatchAction();
-                }
-              }}
-            >
-              🗑️ Maçı Sıfırla
-            </button>
+            {confirmReset ? (
+              <div style={{ marginTop: "1rem", background: "rgba(255,77,77,0.1)", border: "1px solid rgba(255,77,77,0.35)", borderRadius: "10px", padding: "0.85rem 1rem" }}>
+                <p style={{ margin: "0 0 0.75rem", fontSize: "0.85rem", color: "#ff4d4d", fontWeight: 600 }}>
+                  Skor sıfırlanacak, tüm gol/kart olayları silinecek. Emin misiniz?
+                </p>
+                <div style={{ display: "flex", gap: "0.5rem" }}>
+                  <button
+                    type="button"
+                    className="btn-arena"
+                    style={{ flex: 1, background: "#ff4d4d", color: "#fff", fontSize: "0.85rem" }}
+                    disabled={savingMatch}
+                    onClick={() => { setConfirmReset(false); void resetMatchAction(); }}
+                  >
+                    {savingMatch ? "Sıfırlanıyor…" : "Evet, Sıfırla"}
+                  </button>
+                  <button
+                    type="button"
+                    className="ghost"
+                    style={{ flex: 1, fontSize: "0.85rem" }}
+                    disabled={savingMatch}
+                    onClick={() => setConfirmReset(false)}
+                  >
+                    İptal
+                  </button>
+                </div>
+              </div>
+            ) : (
+              <button
+                type="button"
+                className="ghost"
+                style={{ width: "100%", marginTop: "1rem", color: "#ff4d4d", fontSize: "0.85rem", fontWeight: 600, border: "1px solid rgba(255,77,77,0.2)", borderRadius: "8px", padding: "0.5rem" }}
+                disabled={savingMatch}
+                onClick={() => setConfirmReset(true)}
+              >
+                🗑️ Maçı Sıfırla
+              </button>
+            )}
           </section>
 
           <section className="match-sheet__section">

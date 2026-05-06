@@ -1,4 +1,5 @@
 import { useMemo } from "react";
+import type { GroupStandings } from "../../types/tournament";
 import type { TournamentAppState } from "../../hooks/useTournamentApp";
 import { TeamBadge } from "../ui/TeamBadge";
 
@@ -17,14 +18,37 @@ function groupLabel(name: string): string {
 }
 
 export function StandingsView({ app }: Props) {
-  const { standings } = app;
+  const { standings, teams, loadingTeams } = app;
 
   const teamById = useMemo(
     () => new Map(app.teams.map((t) => [t.id, t])),
     [app.teams]
   );
 
-  if (standings.length === 0) {
+  // Takımlar varken backend boş döndürürse (yükleme yarış koşulu vb.) direkt teamlardan üret
+  const effectiveStandings = useMemo((): GroupStandings[] => {
+    if (standings.length > 0) return standings;
+    if (teams.length === 0) return [];
+    return [{
+      group_id: 0,
+      group_name: "Genel",
+      rows: [...teams]
+        .sort((a, b) => a.name.localeCompare(b.name, "tr"))
+        .map((t, i) => ({
+          rank: i + 1,
+          team_id: t.id,
+          team_name: t.name,
+          played: 0, won: 0, drawn: 0, lost: 0,
+          gf: 0, ga: 0, gd: 0, points: 0,
+        })),
+    }];
+  }, [standings, teams]);
+
+  if (loadingTeams) {
+    return <div className="empty-state">Yükleniyor…</div>;
+  }
+
+  if (effectiveStandings.length === 0) {
     return (
       <div className="empty-state">
         <strong>Takım yok</strong>
@@ -32,13 +56,13 @@ export function StandingsView({ app }: Props) {
     );
   }
 
-  const isPreDraw = standings.length === 1 && standings[0].group_name === "Genel";
+  const isPreDraw = effectiveStandings.length === 1 && effectiveStandings[0].group_name === "Genel";
 
   return (
     <div className="standings-view">
       <h2 style={{ margin: "0 0 1.25rem", fontSize: "1.35rem", fontWeight: 800 }}>Puan durumu</h2>
       <div className="standings-wrap">
-        {standings.map((g) => (
+        {effectiveStandings.map((g) => (
           <div key={g.group_id} className="standings-card">
             <div className="standings-card__head">{groupLabel(g.group_name)}</div>
             <table className="standings-table">

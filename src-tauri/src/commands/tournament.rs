@@ -929,7 +929,7 @@ pub fn get_standings(db: tauri::State<DbConn>) -> Result<Vec<GroupStandings>, St
             .query_row("SELECT id FROM groups WHERE name = 'L'", [], |r| r.get(0))
             .unwrap_or(0);
         let rows = standings_for_league(&conn)?;
-        upsert_knockout(&conn)?;
+        let _ = upsert_knockout(&conn); // side-effect, hata olursa standings'i engelleme
         return Ok(vec![GroupStandings {
             group_id: league_group_id,
             group_name: "Lig".to_string(),
@@ -940,16 +940,39 @@ pub fn get_standings(db: tauri::State<DbConn>) -> Result<Vec<GroupStandings>, St
     let groups = get_groups_internal(&conn)?;
 
     if groups.is_empty() {
-        let rows = standings_for_league(&conn)?;
-        return Ok(if rows.is_empty() {
-            vec![]
-        } else {
-            vec![GroupStandings {
-                group_id: 0,
-                group_name: "Genel".to_string(),
-                rows,
-            }]
-        });
+        let mut stmt = conn
+            .prepare("SELECT id, name FROM teams ORDER BY name COLLATE NOCASE")
+            .map_err(|e| e.to_string())?;
+        let team_rows: Vec<(i64, String)> = stmt
+            .query_map([], |row| Ok((row.get(0)?, row.get(1)?)))
+            .map_err(|e| e.to_string())?
+            .collect::<Result<_, rusqlite::Error>>()
+            .map_err(|e| e.to_string())?;
+        if team_rows.is_empty() {
+            return Ok(vec![]);
+        }
+        let rows: Vec<StandingRow> = team_rows
+            .iter()
+            .enumerate()
+            .map(|(i, (tid, name))| StandingRow {
+                rank: (i + 1) as i64,
+                team_id: *tid,
+                team_name: name.clone(),
+                played: 0,
+                won: 0,
+                drawn: 0,
+                lost: 0,
+                gf: 0,
+                ga: 0,
+                gd: 0,
+                points: 0,
+            })
+            .collect();
+        return Ok(vec![GroupStandings {
+            group_id: 0,
+            group_name: "Genel".to_string(),
+            rows,
+        }]);
     }
 
     let mut result = Vec::new();
@@ -961,7 +984,7 @@ pub fn get_standings(db: tauri::State<DbConn>) -> Result<Vec<GroupStandings>, St
             rows,
         });
     }
-    upsert_knockout(&conn)?;
+    let _ = upsert_knockout(&conn); // side-effect, hata olursa standings'i engelleme
     Ok(result)
 }
 

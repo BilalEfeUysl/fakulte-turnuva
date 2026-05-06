@@ -4,9 +4,9 @@ const TABS: { id: AppView; label: string }[] = [
   { id: "home", label: "Ana Sayfa" },
   { id: "teams", label: "Takımlar" },
   { id: "management", label: "Yönetim" },
-  { id: "fixtures", label: "Takvim/Fikstür" },
+  { id: "fixtures", label: "Fikstür" },
   { id: "standings", label: "Puan Tablosu" },
-  { id: "scorers", label: "Gol Kralı" },
+  { id: "scorers", label: "Gol Lideri" },
 ];
 
 type Props = {

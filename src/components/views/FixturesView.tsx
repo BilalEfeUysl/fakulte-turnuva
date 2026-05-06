@@ -55,8 +55,8 @@ function MatchCard({ m, onOpen, variant = "group", teamById }: CardProps) {
           {finished ? `${m.home_score} – ${m.away_score}` : "VS"}
         </span>
         <span className="match-card__team match-card__team--away">
-          <TeamBadge size="sm" color={away?.color} shortName={away?.short_name} name={m.away_team_name} />
           <span className="match-card__team-name">{m.away_team_name}</span>
+          <TeamBadge size="sm" color={away?.color} shortName={away?.short_name} name={m.away_team_name} />
         </span>
       </div>
       <div className="match-card__action">
