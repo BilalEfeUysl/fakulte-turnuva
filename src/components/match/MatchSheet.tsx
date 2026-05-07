@@ -1,7 +1,8 @@
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import type { TournamentAppState } from "../../hooks/useTournamentApp";
 import * as membersApi from "../../api/members";
 import type { TeamMember } from "../../types/team";
+import { StoryExportButton } from "../ui/StoryExportButton";
 
 type Props = { app: TournamentAppState };
 
@@ -79,6 +80,8 @@ export function MatchSheet({ app }: Props) {
     window.addEventListener("keydown", onKey);
     return () => window.removeEventListener("keydown", onKey);
   }, [closeMatch]);
+
+  const teamById = useMemo(() => new Map(app.teams.map((t) => [t.id, t])), [app.teams]);
 
   if (!selectedMatch) return null;
 
@@ -167,7 +170,7 @@ export function MatchSheet({ app }: Props) {
                 <option value="scheduled">⏱️ Planlandı</option>
                 <option value="finished">✅ Tamamlandı</option>
               </select>
-              
+
               <button
                 type="button"
                 className="btn-arena btn-arena--gold"
@@ -179,6 +182,16 @@ export function MatchSheet({ app }: Props) {
                 {savingMatch ? "Kaydediliyor…" : "Kaydet"}
               </button>
             </div>
+
+            {selectedMatch.status === "finished" && (
+              <div style={{ marginTop: "1rem", display: "flex", justifyContent: "center" }}>
+                <StoryExportButton
+                  label="Hikaye Görseli Oluştur"
+                  title="Bu maç sonucunu Instagram hikayesi olarak kaydet"
+                  buildData={() => ({ type: "single_match_result", match: selectedMatch, teamById })}
+                />
+              </div>
+            )}
 
             {confirmReset ? (
               <div style={{ marginTop: "1rem", background: "rgba(255,77,77,0.1)", border: "1px solid rgba(255,77,77,0.35)", borderRadius: "10px", padding: "0.85rem 1rem" }}>

@@ -3,6 +3,7 @@ import type { MatchRow } from "../../types/tournament";
 import type { Team } from "../../types/team";
 import type { TournamentAppState } from "../../hooks/useTournamentApp";
 import { TeamBadge } from "../ui/TeamBadge";
+import { StoryExportButton } from "../ui/StoryExportButton";
 
 type Props = { app: TournamentAppState };
 
@@ -97,13 +98,15 @@ export function FixturesView({ app }: Props) {
         if (m.stage === "league") hasLeague = true;
         const n = m.matchday_no > 0 ? m.matchday_no : 0;
         const key = `day-${n}`;
-        const label = n > 0 ? `Gün ${n}` : "Planlanmamış";
+        const dayLabels: Record<number, string> = { 1: "1 Haziran 2026", 2: "3 Haziran 2026", 3: "5 Haziran 2026" };
+        const label = n > 0 ? (dayLabels[n] ?? `Gün ${n}`) : "Planlanmamış";
         if (!days.has(key)) days.set(key, { label, sortKey: n, matches: [] });
         days.get(key)!.matches.push(m);
       } else if (/^Gün \d+/.test(m.stage)) {
         const key = `stage-${m.stage}`;
         const n = parseInt(m.stage.replace("Gün ", ""), 10) || 0;
-        if (!days.has(key)) days.set(key, { label: m.stage, sortKey: n, matches: [] });
+        const dayLabels2: Record<number, string> = { 1: "1 Haziran 2026", 2: "3 Haziran 2026", 3: "5 Haziran 2026" };
+        if (!days.has(key)) days.set(key, { label: dayLabels2[n] ?? m.stage, sortKey: n, matches: [] });
         days.get(key)!.matches.push(m);
       } else {
         const label = knockoutLabel(m.stage);
@@ -143,19 +146,33 @@ export function FixturesView({ app }: Props) {
         <section className="fixture-section">
           <h3 className="fixture-section__heading">{isLeague ? "Lig Maçları" : "Grup Maçları"}</h3>
           <div className="fixture-days-grid">
-            {dayBuckets.map(({ label, matches: dayMatches }) => (
-              <div key={label} className="fixture-day-col">
-                <div className="fixture-day-col__head">
-                  <div className="fixture-day-col__title">{label}</div>
-                  <div className="fixture-day-col__count">{dayMatches.length} maç</div>
+            {dayBuckets.map(({ label, matches: dayMatches }) => {
+              const finishedMatches = dayMatches.filter((m) => m.status === "finished");
+              const upcomingMatches = dayMatches.filter((m) => m.status !== "finished");
+              const showResults = finishedMatches.length > 0;
+              return (
+                <div key={label} className="fixture-day-col">
+                  <div className="fixture-day-col__head" style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: "0.5rem" }}>
+                    <div className="fixture-day-col__title">{label}</div>
+                    <StoryExportButton
+                      size="sm"
+                      label={showResults ? "Sonuçlar" : "Program"}
+                      title={showResults ? "Bu günün sonuçlarını hikaye görseli olarak kaydet" : "Bu günün programını hikaye görseli olarak kaydet"}
+                      buildData={() =>
+                        showResults
+                          ? { type: "daily_results", dateLabel: label, matches: finishedMatches, teamById }
+                          : { type: "upcoming_matches", title: label, matches: upcomingMatches, teamById }
+                      }
+                    />
+                  </div>
+                  <div className="fixture-day-col__body">
+                    {dayMatches.map((m) => (
+                      <MatchCard key={m.id} m={m} onOpen={openMatch} variant="group" teamById={teamById} />
+                    ))}
+                  </div>
                 </div>
-                <div className="fixture-day-col__body">
-                  {dayMatches.map((m) => (
-                    <MatchCard key={m.id} m={m} onOpen={openMatch} variant="group" teamById={teamById} />
-                  ))}
-                </div>
-              </div>
-            ))}
+              );
+            })}
           </div>
         </section>
       )}
@@ -166,15 +183,28 @@ export function FixturesView({ app }: Props) {
           <div className="fixture-finals-grid">
             {knockoutBuckets.map(({ stage, matches: stageMatches }) => {
               const isFinal = stage === "Final";
+              const stageFinished = stageMatches.filter((m) => m.status === "finished");
+              const stageUpcoming = stageMatches.filter((m) => m.status !== "finished");
+              const stageShowResults = stageFinished.length > 0;
               return (
                 <div
                   key={stage}
                   className={`fixture-final-block${isFinal ? " fixture-final-block--final" : ""}`}
                 >
-                  <div className="fixture-final-block__head">
+                  <div className="fixture-final-block__head" style={{ gap: "0.5rem" }}>
                     <span className="fixture-final-block__icon">{FINAL_ICONS[stage] ?? "🏅"}</span>
                     <span className="fixture-final-block__title">{stage}</span>
                     <span className="fixture-final-block__count">{stageMatches.length} maç</span>
+                    <StoryExportButton
+                      size="sm"
+                      label={stageShowResults ? "Sonuçlar" : "Program"}
+                      title="Bu aşamayı hikaye görseli olarak kaydet"
+                      buildData={() =>
+                        stageShowResults
+                          ? { type: "daily_results", dateLabel: stage, matches: stageFinished, teamById }
+                          : { type: "upcoming_matches", title: stage, matches: stageUpcoming, teamById }
+                      }
+                    />
                   </div>
                   <div className="fixture-final-block__body">
                     {stageMatches.map((m) => (

@@ -1,6 +1,7 @@
 import { useMemo } from "react";
 import type { TournamentAppState } from "../../hooks/useTournamentApp";
 import { TeamBadge } from "../ui/TeamBadge";
+import { StoryExportButton } from "../ui/StoryExportButton";
 
 type Props = { app: TournamentAppState };
 
@@ -32,7 +33,14 @@ export function ScorersView({ app }: Props) {
 
   return (
     <div>
-      <h2 style={{ margin: "0 0 1.25rem", fontSize: "1.35rem", fontWeight: 800 }}>Gol lideri</h2>
+      <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", margin: "0 0 1.25rem", gap: "0.75rem" }}>
+        <h2 style={{ margin: 0, fontSize: "1.35rem", fontWeight: 800 }}>Gol lideri</h2>
+        <StoryExportButton
+          label="Hikaye Görseli"
+          title="Gol krallığını Instagram hikayesi olarak kaydet"
+          buildData={() => ({ type: "top_scorers", scorers, teamById })}
+        />
+      </div>
 
       <div className="scorers-podium" style={{ gridTemplateColumns: `repeat(${top3.length}, 1fr)` }}>
         {top3.map((s, i) => {

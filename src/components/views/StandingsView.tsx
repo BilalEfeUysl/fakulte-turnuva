@@ -2,6 +2,7 @@ import { useMemo } from "react";
 import type { GroupStandings } from "../../types/tournament";
 import type { TournamentAppState } from "../../hooks/useTournamentApp";
 import { TeamBadge } from "../ui/TeamBadge";
+import { StoryExportButton } from "../ui/StoryExportButton";
 
 type Props = { app: TournamentAppState };
 
@@ -37,15 +38,26 @@ export function StandingsView({ app }: Props) {
     );
   }
 
-  const isPreDraw = standings.length === 1 && standings[0].group_name === "Genel";
-
   return (
     <div className="standings-view">
       <h2 style={{ margin: "0 0 1.25rem", fontSize: "1.35rem", fontWeight: 800 }}>Puan durumu</h2>
       <div className="standings-wrap">
         {standings.map((g: GroupStandings) => (
           <div key={g.group_id} className="standings-card">
-            <div className="standings-card__head">{groupLabel(g.group_name)}</div>
+            <div className="standings-card__head" style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: "0.75rem" }}>
+              <span>{groupLabel(g.group_name)}</span>
+              <StoryExportButton
+                size="sm"
+                label="Hikaye"
+                title="Bu puan tablosunu Instagram hikayesi olarak kaydet"
+                buildData={() => ({
+                  type: "standings",
+                  group: g,
+                  teamById,
+                  groupLabel: groupLabel(g.group_name),
+                })}
+              />
+            </div>
             <table className="standings-table">
               <thead>
                 <tr>

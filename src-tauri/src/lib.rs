@@ -9,6 +9,8 @@ use tauri::Manager;
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
     tauri::Builder::default()
+        .plugin(tauri_plugin_dialog::init())
+        .plugin(tauri_plugin_fs::init())
         .setup(|app| {
             let conn = db::init_db(app.handle()).map_err(|e| e.to_string())?;
             app.manage(DbConn(Mutex::new(conn)));
@@ -33,6 +35,7 @@ pub fn run() {
             commands::tournament::get_standings,
             commands::tournament::reset_all,
             commands::tournament::reset_teams,
+            commands::tournament::generate_genel_knockouts,
             commands::matches::add_match,
             commands::matches::list_matches,
             commands::matches::update_match,
@@ -41,6 +44,7 @@ pub fn run() {
             commands::matches::list_match_events,
             commands::matches::delete_match_event,
             commands::matches::reset_match,
+            commands::matches::delete_match,
             commands::stats::get_top_scorers,
             commands::stats::get_team_summaries,
             commands::stats::get_player_summary,
