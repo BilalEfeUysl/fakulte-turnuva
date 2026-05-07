@@ -7,7 +7,7 @@ pub fn list_teams(db: tauri::State<DbConn>) -> Result<Vec<Team>, String> {
     let conn = db.0.lock().map_err(|e| e.to_string())?;
     let mut stmt = conn
         .prepare(
-            "SELECT id, name, faculty_name, notes, color, short_name, created_at FROM teams \
+            "SELECT id, name, faculty_name, notes, color, short_name, manager_name, manager_phone, manager_email, created_at FROM teams \
              ORDER BY name COLLATE NOCASE",
         )
         .map_err(|e| e.to_string())?;
@@ -20,7 +20,10 @@ pub fn list_teams(db: tauri::State<DbConn>) -> Result<Vec<Team>, String> {
                 notes: row.get(3)?,
                 color: row.get(4)?,
                 short_name: row.get(5)?,
-                created_at: row.get(6)?,
+                manager_name: row.get(6)?,
+                manager_phone: row.get(7)?,
+                manager_email: row.get(8)?,
+                created_at: row.get(9)?,
             })
         })
         .map_err(|e| e.to_string())?;
@@ -43,14 +46,17 @@ pub fn create_team(
     if count >= 10 {
         return Err("En fazla 10 takım ekleyebilirsiniz (turnuva düzeni).".into());
     }
+    let manager_name = payload.manager_name.and_then(|s| { let t = s.trim().to_string(); if t.is_empty() { None } else { Some(t) } });
+    let manager_phone = payload.manager_phone.and_then(|s| { let t = s.trim().to_string(); if t.is_empty() { None } else { Some(t) } });
+    let manager_email = payload.manager_email.and_then(|s| { let t = s.trim().to_string(); if t.is_empty() { None } else { Some(t) } });
     conn.execute(
-        "INSERT INTO teams (name, faculty_name, notes, color, short_name) VALUES (?1, ?2, ?3, ?4, ?5)",
-        params![payload.name, payload.faculty_name, payload.notes, payload.color, payload.short_name],
+        "INSERT INTO teams (name, faculty_name, notes, color, short_name, manager_name, manager_phone, manager_email) VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8)",
+        params![payload.name, payload.faculty_name, payload.notes, payload.color, payload.short_name, manager_name, manager_phone, manager_email],
     )
     .map_err(|e| e.to_string())?;
     let id = conn.last_insert_rowid();
     conn.query_row(
-        "SELECT id, name, faculty_name, notes, color, short_name, created_at FROM teams WHERE id = ?1",
+        "SELECT id, name, faculty_name, notes, color, short_name, manager_name, manager_phone, manager_email, created_at FROM teams WHERE id = ?1",
         params![id],
         |row| {
             Ok(Team {
@@ -60,7 +66,10 @@ pub fn create_team(
                 notes: row.get(3)?,
                 color: row.get(4)?,
                 short_name: row.get(5)?,
-                created_at: row.get(6)?,
+                manager_name: row.get(6)?,
+                manager_phone: row.get(7)?,
+                manager_email: row.get(8)?,
+                created_at: row.get(9)?,
             })
         },
     )
@@ -73,15 +82,21 @@ pub fn update_team(
     payload: UpdateTeamPayload,
 ) -> Result<(), String> {
     let conn = db.0.lock().map_err(|e| e.to_string())?;
+    let manager_name = payload.manager_name.and_then(|s| { let t = s.trim().to_string(); if t.is_empty() { None } else { Some(t) } });
+    let manager_phone = payload.manager_phone.and_then(|s| { let t = s.trim().to_string(); if t.is_empty() { None } else { Some(t) } });
+    let manager_email = payload.manager_email.and_then(|s| { let t = s.trim().to_string(); if t.is_empty() { None } else { Some(t) } });
     let n = conn
         .execute(
-            "UPDATE teams SET name = ?1, faculty_name = ?2, notes = ?3, color = ?4, short_name = ?5 WHERE id = ?6",
+            "UPDATE teams SET name = ?1, faculty_name = ?2, notes = ?3, color = ?4, short_name = ?5, manager_name = ?6, manager_phone = ?7, manager_email = ?8 WHERE id = ?9",
             params![
                 payload.name,
                 payload.faculty_name,
                 payload.notes,
                 payload.color,
                 payload.short_name,
+                manager_name,
+                manager_phone,
+                manager_email,
                 payload.id
             ],
         )

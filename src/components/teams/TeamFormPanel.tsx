@@ -4,10 +4,16 @@ type Props = {
   formNotes: string;
   formColor: string;
   formShortName: string;
+  formManagerName: string;
+  formManagerPhone: string;
+  formManagerEmail: string;
   onNameChange: (v: string) => void;
   onNotesChange: (v: string) => void;
   onColorChange: (v: string) => void;
   onShortNameChange: (v: string) => void;
+  onManagerNameChange: (v: string) => void;
+  onManagerPhoneChange: (v: string) => void;
+  onManagerEmailChange: (v: string) => void;
   onSubmit: (e: React.FormEvent) => void;
   onCancelEdit: () => void;
   disabled?: boolean;
@@ -20,10 +26,16 @@ export function TeamFormPanel({
   formNotes,
   formColor,
   formShortName,
+  formManagerName,
+  formManagerPhone,
+  formManagerEmail,
   onNameChange,
   onNotesChange,
   onColorChange,
   onShortNameChange,
+  onManagerNameChange,
+  onManagerPhoneChange,
+  onManagerEmailChange,
   onSubmit,
   onCancelEdit,
   disabled = false,
@@ -79,11 +91,46 @@ export function TeamFormPanel({
           </label>
         </div>
         <label>
+          Takım Sorumlusu (opsiyonel)
+          <input
+            type="text"
+            value={formManagerName}
+            onChange={(e) => onManagerNameChange(e.target.value)}
+            placeholder="Ad Soyad"
+            autoComplete="off"
+            disabled={freeze}
+          />
+        </label>
+        <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "1rem" }}>
+          <label>
+            Telefon
+            <input
+              type="tel"
+              value={formManagerPhone}
+              onChange={(e) => onManagerPhoneChange(e.target.value)}
+              placeholder="05xx xxx xx xx"
+              autoComplete="off"
+              disabled={freeze}
+            />
+          </label>
+          <label>
+            E-posta
+            <input
+              type="email"
+              value={formManagerEmail}
+              onChange={(e) => onManagerEmailChange(e.target.value)}
+              placeholder="ornek@mail.com"
+              autoComplete="off"
+              disabled={freeze}
+            />
+          </label>
+        </div>
+        <label>
           Notlar (isteğe bağlı)
           <textarea
             value={formNotes}
             onChange={(e) => onNotesChange(e.target.value)}
-            placeholder="Kısa açıklama, iletişim, saha bilgisi…"
+            placeholder="Kısa açıklama, saha bilgisi…"
             disabled={freeze}
           />
         </label>

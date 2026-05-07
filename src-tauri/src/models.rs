@@ -8,6 +8,9 @@ pub struct Team {
     pub notes: String,
     pub color: String,
     pub short_name: String,
+    pub manager_name: Option<String>,
+    pub manager_phone: Option<String>,
+    pub manager_email: Option<String>,
     pub created_at: String,
 }
 
@@ -33,6 +36,12 @@ pub struct CreateTeamPayload {
     pub color: String,
     #[serde(default)]
     pub short_name: String,
+    #[serde(default)]
+    pub manager_name: Option<String>,
+    #[serde(default)]
+    pub manager_phone: Option<String>,
+    #[serde(default)]
+    pub manager_email: Option<String>,
 }
 
 fn default_color() -> String {
@@ -51,6 +60,12 @@ pub struct UpdateTeamPayload {
     pub color: String,
     #[serde(default)]
     pub short_name: String,
+    #[serde(default)]
+    pub manager_name: Option<String>,
+    #[serde(default)]
+    pub manager_phone: Option<String>,
+    #[serde(default)]
+    pub manager_email: Option<String>,
 }
 
 #[derive(Debug, Deserialize)]

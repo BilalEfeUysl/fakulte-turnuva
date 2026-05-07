@@ -19,6 +19,9 @@ pub fn init_db(app: &tauri::AppHandle) -> Result<Connection, Box<dyn std::error:
             notes TEXT NOT NULL DEFAULT '',
             color TEXT NOT NULL DEFAULT '#14b8a6',
             short_name TEXT NOT NULL DEFAULT '',
+            manager_name TEXT,
+            manager_phone TEXT,
+            manager_email TEXT,
             created_at TEXT NOT NULL DEFAULT (datetime('now'))
         );
         CREATE TABLE IF NOT EXISTS team_members (
@@ -97,6 +100,9 @@ pub fn init_db(app: &tauri::AppHandle) -> Result<Connection, Box<dyn std::error:
         "short_name",
         "TEXT NOT NULL DEFAULT ''",
     )?;
+    ensure_column(&conn, "teams", "manager_name",  "TEXT")?;
+    ensure_column(&conn, "teams", "manager_phone", "TEXT")?;
+    ensure_column(&conn, "teams", "manager_email", "TEXT")?;
     ensure_column(
         &conn,
         "matches",

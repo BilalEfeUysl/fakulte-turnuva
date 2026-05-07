@@ -94,10 +94,16 @@ export function ManagementView({ app }: Props) {
           formNotes={app.formNotes}
           formColor={app.formColor}
           formShortName={app.formShortName}
+          formManagerName={app.formManagerName}
+          formManagerPhone={app.formManagerPhone}
+          formManagerEmail={app.formManagerEmail}
           onNameChange={app.setFormName}
           onNotesChange={app.setFormNotes}
           onColorChange={app.setFormColor}
           onShortNameChange={app.setFormShortName}
+          onManagerNameChange={app.setFormManagerName}
+          onManagerPhoneChange={app.setFormManagerPhone}
+          onManagerEmailChange={app.setFormManagerEmail}
           onSubmit={app.submitTeam}
           onCancelEdit={app.cancelEdit}
           disabled={app.savingTeam || app.loadingTeams}
@@ -191,7 +197,22 @@ export function ManagementView({ app }: Props) {
         </section>
       </div>
 
-      <div style={{ marginTop: "1.5rem", display: "flex", gap: "0.75rem", flexWrap: "wrap" }}>
+      <div style={{ marginTop: "1.5rem", display: "flex", gap: "0.75rem", flexWrap: "wrap", alignItems: "center" }}>
+        <button
+          className="primary"
+          style={{
+            borderRadius: "0.5rem",
+            padding: "0.5rem 1rem",
+            fontWeight: 600,
+          }}
+          disabled={app.drawRunning || !!pendingReset}
+          onClick={app.generateGenelKnockoutsAction}
+          title="Manuel maçlarınız bittiyse Playoff, Playofflar bittiyse Yarı Final, Yarı Finaller bittiyse Final oluşturur."
+        >
+          Sonraki Aşamayı Oluştur (Playoff / Yarı Final / Final)
+        </button>
+
+        <div style={{ flex: 1 }}></div>
         <button
           style={{
             background: "transparent",

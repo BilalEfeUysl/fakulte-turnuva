@@ -11,6 +11,9 @@ export function createTeam(input: {
   notes: string;
   color: string;
   shortName: string;
+  managerName?: string | null;
+  managerPhone?: string | null;
+  managerEmail?: string | null;
 }): Promise<Team> {
   return invoke<Team>("create_team", { payload: input });
 }
@@ -22,6 +25,9 @@ export function updateTeam(input: {
   notes: string;
   color: string;
   shortName: string;
+  managerName?: string | null;
+  managerPhone?: string | null;
+  managerEmail?: string | null;
 }): Promise<void> {
   return invoke<void>("update_team", { payload: input });
 }

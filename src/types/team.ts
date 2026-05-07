@@ -7,6 +7,9 @@ export type Team = {
   notes: string;
   color: string;
   short_name: string;
+  manager_name: string | null;
+  manager_phone: string | null;
+  manager_email: string | null;
   created_at: string;
 };
 

@@ -81,6 +81,17 @@ export function MembersPanel({
               {selected.faculty_name && selected.faculty_name !== selected.name ? (
                 <p className="team-detail__faculty">{selected.faculty_name}</p>
               ) : null}
+              {selected.manager_name ? (
+                <p className="team-detail__faculty" style={{ marginTop: "0.25rem" }}>
+                  Sorumlu: {selected.manager_name}
+                  {selected.manager_phone ? (
+                    <> · <a href={`tel:${selected.manager_phone}`} style={{ color: "inherit" }}>{selected.manager_phone}</a></>
+                  ) : null}
+                  {selected.manager_email ? (
+                    <> · <a href={`mailto:${selected.manager_email}`} style={{ color: "inherit" }}>{selected.manager_email}</a></>
+                  ) : null}
+                </p>
+              ) : null}
             </div>
           </div>
           <div className="row-actions members-toolbar">

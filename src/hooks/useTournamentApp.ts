@@ -53,6 +53,9 @@ export function useTournamentApp() {
   const [formNotes, setFormNotes] = useState("");
   const [formColor, setFormColor] = useState("#14b8a6");
   const [formShortName, setFormShortName] = useState("");
+  const [formManagerName, setFormManagerName] = useState("");
+  const [formManagerPhone, setFormManagerPhone] = useState("");
+  const [formManagerEmail, setFormManagerEmail] = useState("");
   const [editTeamId, setEditTeamId] = useState<number | null>(null);
 
   const [memberName, setMemberName] = useState("");
@@ -174,6 +177,9 @@ export function useTournamentApp() {
     setFormNotes(t.notes);
     setFormColor(t.color || "#14b8a6");
     setFormShortName(t.short_name || "");
+    setFormManagerName(t.manager_name ?? "");
+    setFormManagerPhone(t.manager_phone ?? "");
+    setFormManagerEmail(t.manager_email ?? "");
     setView("management");
   }, []);
 
@@ -183,6 +189,9 @@ export function useTournamentApp() {
     setFormNotes("");
     setFormColor("#14b8a6");
     setFormShortName("");
+    setFormManagerName("");
+    setFormManagerPhone("");
+    setFormManagerEmail("");
   }, []);
 
 
@@ -198,13 +207,16 @@ export function useTournamentApp() {
       const notes = formNotes.trim();
       const color = formColor.trim() || "#14b8a6";
       const shortName = formShortName.trim();
+      const managerName = formManagerName.trim() || null;
+      const managerPhone = formManagerPhone.trim() || null;
+      const managerEmail = formManagerEmail.trim() || null;
       setSavingTeam(true);
       try {
         if (editTeamId != null) {
-          await teamsApi.updateTeam({ id: editTeamId, name, facultyName: name, notes, color, shortName });
+          await teamsApi.updateTeam({ id: editTeamId, name, facultyName: name, notes, color, shortName, managerName, managerPhone, managerEmail });
           setSuccessMessage("Takım güncellendi.");
         } else {
-          await teamsApi.createTeam({ name, facultyName: name, notes, color, shortName });
+          await teamsApi.createTeam({ name, facultyName: name, notes, color, shortName, managerName, managerPhone, managerEmail });
           setSuccessMessage("Takım oluşturuldu.");
         }
         cancelEdit();
@@ -215,7 +227,7 @@ export function useTournamentApp() {
         setSavingTeam(false);
       }
     },
-    [cancelEdit, editTeamId, formName, formNotes, formColor, formShortName, loadAll],
+    [cancelEdit, editTeamId, formName, formNotes, formColor, formShortName, formManagerName, formManagerPhone, formManagerEmail, loadAll],
   );
 
   const askDeleteTeam = useCallback((team: Team) => {
@@ -566,6 +578,12 @@ export function useTournamentApp() {
     setFormColor,
     formShortName,
     setFormShortName,
+    formManagerName,
+    setFormManagerName,
+    formManagerPhone,
+    setFormManagerPhone,
+    formManagerEmail,
+    setFormManagerEmail,
     editTeamId,
     memberName,
     setMemberName,
