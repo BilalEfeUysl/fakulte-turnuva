@@ -62,11 +62,21 @@ export function StandingsView({ app }: Props) {
                 </tr>
               </thead>
               <tbody>
-                {g.rows.map((r) => {
+                {g.rows.map((r, i) => {
                   const zone = isPreDraw ? "" : rowZoneClass(r.rank);
+                  const prevZone = i > 0 && !isPreDraw ? rowZoneClass(g.rows[i - 1].rank) : "";
+                  const nextZone = i < g.rows.length - 1 && !isPreDraw ? rowZoneClass(g.rows[i + 1].rank) : "";
+                  const isFirst = zone && zone !== prevZone;
+                  const isLast = zone && zone !== nextZone;
                   const team = teamById.get(r.team_id);
+                  const cls = [
+                    "rank-" + r.rank,
+                    zone,
+                    isFirst ? zone + "--first" : "",
+                    isLast ? zone + "--last" : "",
+                  ].filter(Boolean).join(" ");
                   return (
-                    <tr key={r.team_id} className={["rank-" + r.rank, zone].filter(Boolean).join(" ")}>
+                    <tr key={r.team_id} className={cls}>
                       <td>
                         <span className={`standings-rank-badge${zone ? ` standings-rank-badge--${zone}` : ""}`}>
                           {r.rank}

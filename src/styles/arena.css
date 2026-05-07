@@ -423,7 +423,8 @@ button.btn-arena.btn-arena--gold:hover:not(:disabled) {
 
 .standings-table {
   width: 100%;
-  border-collapse: collapse;
+  border-collapse: separate;
+  border-spacing: 0;
   font-size: 0.82rem;
 }
 
@@ -456,12 +457,42 @@ button.btn-arena.btn-arena--gold:hover:not(:disabled) {
   background: rgba(255, 255, 255, 0.02);
 }
 
-.standings-table tbody tr.zone-sf {
-  background: rgba(240, 193, 75, 0.07);
+/* ── Zone-SF (1.–2. sıra) çerçeve ── */
+.standings-table tbody tr.zone-sf td {
+  background: rgba(96, 165, 250, 0.055);
+  border-top: 1px solid transparent;
+  border-bottom: 1px solid transparent;
+}
+.standings-table tbody tr.zone-sf td:first-child {
+  border-left: 3px solid #60a5fa;
+}
+.standings-table tbody tr.zone-sf td:last-child {
+  border-right: 1px solid rgba(96, 165, 250, 0.32);
+}
+.standings-table tbody tr.zone-sf--first td {
+  border-top-color: rgba(96, 165, 250, 0.38);
+}
+.standings-table tbody tr.zone-sf--last td {
+  border-bottom-color: rgba(96, 165, 250, 0.38);
 }
 
-.standings-table tbody tr.zone-po {
-  background: rgba(96, 165, 250, 0.06);
+/* ── Zone-PO (3.–6. sıra) çerçeve ── */
+.standings-table tbody tr.zone-po td {
+  background: rgba(245, 158, 11, 0.045);
+  border-top: 1px solid transparent;
+  border-bottom: 1px solid transparent;
+}
+.standings-table tbody tr.zone-po td:first-child {
+  border-left: 3px solid #f59e0b;
+}
+.standings-table tbody tr.zone-po td:last-child {
+  border-right: 1px solid rgba(245, 158, 11, 0.30);
+}
+.standings-table tbody tr.zone-po--first td {
+  border-top-color: rgba(245, 158, 11, 0.35);
+}
+.standings-table tbody tr.zone-po--last td {
+  border-bottom-color: rgba(245, 158, 11, 0.35);
 }
 
 .standings-rank-badge {
@@ -476,27 +507,27 @@ button.btn-arena.btn-arena--gold:hover:not(:disabled) {
 }
 
 .standings-rank-badge--zone-sf {
-  background: rgba(240, 193, 75, 0.18);
-  color: var(--arena-gold);
-  border: 1px solid rgba(240, 193, 75, 0.35);
+  background: rgba(96, 165, 250, 0.18);
+  color: #60a5fa;
+  border: 1px solid rgba(96, 165, 250, 0.4);
 }
 
 .standings-rank-badge--zone-po {
-  background: rgba(96, 165, 250, 0.16);
-  color: #93c5fd;
-  border: 1px solid rgba(96, 165, 250, 0.3);
+  background: rgba(245, 158, 11, 0.16);
+  color: #f59e0b;
+  border: 1px solid rgba(245, 158, 11, 0.35);
 }
 
 .standings-legend {
   display: flex;
-  gap: 1.25rem;
+  gap: 1.5rem;
   flex-wrap: wrap;
   margin-top: 1.25rem;
-  padding: 0.75rem 1rem;
+  padding: 0.9rem 1.25rem;
   border-radius: 12px;
   background: var(--arena-surface);
   border: 1px solid var(--arena-line);
-  font-size: 0.75rem;
+  font-size: 0.8rem;
   font-weight: 600;
   color: var(--arena-muted);
 }
@@ -508,41 +539,126 @@ button.btn-arena.btn-arena--gold:hover:not(:disabled) {
 }
 
 .standings-legend__item--sf {
-  color: var(--arena-gold);
+  color: #60a5fa;
 }
 
 .standings-legend__item--po {
-  color: #93c5fd;
+  color: #f59e0b;
 }
 
 .standings-legend__dot {
-  width: 10px;
-  height: 10px;
-  border-radius: 50%;
+  width: 4px;
+  height: 16px;
+  border-radius: 2px;
   flex-shrink: 0;
 }
 
 .standings-legend__item--sf .standings-legend__dot {
-  background: var(--arena-gold);
-}
-
-.standings-legend__item--po .standings-legend__dot {
   background: #60a5fa;
 }
 
+.standings-legend__item--po .standings-legend__dot {
+  background: #f59e0b;
+}
+
 .standings-legend__dot--neutral {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
   background: var(--arena-muted);
   opacity: 0.5;
 }
 
-.standings-table tbody tr.rank-1 td:first-child {
-  color: var(--arena-gold);
-  font-weight: 900;
+
+/* Scorers Podium */
+.scorers-podium {
+  display: grid;
+  gap: 0.875rem;
+  margin-bottom: 1.25rem;
+  width: 100%;
 }
 
-.standings-table tbody tr.rank-2 td:first-child {
-  color: #c0c8d0;
+.scorers-podium-card {
+  border-radius: 16px;
+  border: 1.5px solid var(--arena-line);
+  background: var(--arena-surface);
+  padding: 1.4rem 1.25rem;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.4rem;
+  text-align: center;
+}
+
+.scorers-podium-card--gold {
+  border-color: rgba(240, 193, 75, 0.65);
+  background: linear-gradient(160deg, rgba(240, 193, 75, 0.13) 0%, var(--arena-surface) 65%);
+  box-shadow: 0 0 24px rgba(240, 193, 75, 0.12);
+  padding: 1.75rem 1.25rem;
+}
+
+.scorers-podium-card--silver {
+  border-color: rgba(192, 192, 200, 0.55);
+  background: linear-gradient(160deg, rgba(192, 192, 200, 0.09) 0%, var(--arena-surface) 65%);
+}
+
+.scorers-podium-card--bronze {
+  border-color: rgba(205, 127, 50, 0.55);
+  background: linear-gradient(160deg, rgba(205, 127, 50, 0.1) 0%, var(--arena-surface) 65%);
+}
+
+.scorers-podium-card__medal {
+  font-size: 2rem;
+  line-height: 1;
+  margin-bottom: 0.2rem;
+}
+
+.scorers-podium-card__name {
   font-weight: 800;
+  font-size: 1.05rem;
+  color: var(--arena-text);
+}
+
+.scorers-podium-card__goals {
+  display: flex;
+  align-items: baseline;
+  gap: 0.3rem;
+  margin-top: 0.1rem;
+}
+
+.scorers-podium-card__goals-count {
+  font-size: 2.2rem;
+  font-weight: 900;
+  line-height: 1;
+  letter-spacing: -0.03em;
+}
+
+.scorers-podium-card--gold .scorers-podium-card__goals-count {
+  color: var(--arena-gold);
+}
+
+.scorers-podium-card--silver .scorers-podium-card__goals-count {
+  color: #c0c8d0;
+}
+
+.scorers-podium-card--bronze .scorers-podium-card__goals-count {
+  color: #c8884a;
+}
+
+.scorers-podium-card__goals-label {
+  font-size: 0.88rem;
+  font-weight: 600;
+  color: var(--arena-muted);
+  text-transform: lowercase;
+}
+
+.scorers-podium-card__team {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  font-size: 0.78rem;
+  color: var(--arena-muted);
+  margin-top: 0.15rem;
 }
 
 /* Draw groups */
