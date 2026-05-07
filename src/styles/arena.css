@@ -459,40 +459,36 @@ button.btn-arena.btn-arena--gold:hover:not(:disabled) {
 
 /* ── Zone-SF (1.–2. sıra) çerçeve ── */
 .standings-table tbody tr.zone-sf td {
-  background: rgba(96, 165, 250, 0.055);
-  border-top: 1px solid transparent;
-  border-bottom: 1px solid transparent;
+  background: rgba(96, 165, 250, 0.08);
 }
 .standings-table tbody tr.zone-sf td:first-child {
-  border-left: 3px solid #60a5fa;
+  border-left: 4px solid #60a5fa;
 }
 .standings-table tbody tr.zone-sf td:last-child {
-  border-right: 1px solid rgba(96, 165, 250, 0.32);
+  border-right: 1px solid rgba(96, 165, 250, 0.45);
 }
 .standings-table tbody tr.zone-sf--first td {
-  border-top-color: rgba(96, 165, 250, 0.38);
+  border-top: 1px solid rgba(96, 165, 250, 0.5);
 }
 .standings-table tbody tr.zone-sf--last td {
-  border-bottom-color: rgba(96, 165, 250, 0.38);
+  border-bottom: 1px solid rgba(96, 165, 250, 0.5);
 }
 
 /* ── Zone-PO (3.–6. sıra) çerçeve ── */
 .standings-table tbody tr.zone-po td {
-  background: rgba(245, 158, 11, 0.045);
-  border-top: 1px solid transparent;
-  border-bottom: 1px solid transparent;
+  background: rgba(245, 158, 11, 0.07);
 }
 .standings-table tbody tr.zone-po td:first-child {
-  border-left: 3px solid #f59e0b;
+  border-left: 4px solid #f59e0b;
 }
 .standings-table tbody tr.zone-po td:last-child {
-  border-right: 1px solid rgba(245, 158, 11, 0.30);
+  border-right: 1px solid rgba(245, 158, 11, 0.45);
 }
 .standings-table tbody tr.zone-po--first td {
-  border-top-color: rgba(245, 158, 11, 0.35);
+  border-top: 1px solid rgba(245, 158, 11, 0.5);
 }
 .standings-table tbody tr.zone-po--last td {
-  border-bottom-color: rgba(245, 158, 11, 0.35);
+  border-bottom: 1px solid rgba(245, 158, 11, 0.5);
 }
 
 .standings-rank-badge {
