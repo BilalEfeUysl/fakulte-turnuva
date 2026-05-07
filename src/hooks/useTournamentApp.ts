@@ -37,6 +37,7 @@ export function useTournamentApp() {
   const [error, setError] = useState<string | null>(null);
   const [successMessage, setSuccessMessage] = useState<string | null>(null);
   const [loadingTeams, setLoadingTeams] = useState(true);
+  const [loadingStandings, setLoadingStandings] = useState(true);
   const [loadingMembers, setLoadingMembers] = useState(false);
   const [savingTeam, setSavingTeam] = useState(false);
   const [savingMember, setSavingMember] = useState(false);
@@ -45,7 +46,6 @@ export function useTournamentApp() {
   const [drawRunning, setDrawRunning] = useState(false);
   const [adjustingGroups, setAdjustingGroups] = useState(false);
   const [planningSchedule, setPlanningSchedule] = useState(false);
-  const [leagueDrawCompleted, setLeagueDrawCompleted] = useState(true);
 
   const [teamPendingDelete, setTeamPendingDelete] = useState<PendingTeamDelete | null>(null);
   const [memberPendingDelete, setMemberPendingDelete] = useState<PendingMemberDelete | null>(null);
@@ -96,6 +96,7 @@ export function useTournamentApp() {
   const loadAll = useCallback(async () => {
     setError(null);
     setLoadingTeams(true);
+    setLoadingStandings(true);
     try {
       const [t, g, m, top, teamStats, settings] = await Promise.all([
         teamsApi.listTeams(),
@@ -116,12 +117,13 @@ export function useTournamentApp() {
     } finally {
       setLoadingTeams(false);
     }
-    // Standings ayrı yüklenir — hata olsa bile takımlar görünür
     try {
       const s = await tournamentApi.getStandings();
       setStandings(s);
-    } catch {
-      // sessizce yoksay, frontend takımlardan fallback üretir
+    } catch (e) {
+      setError(String(e));
+    } finally {
+      setLoadingStandings(false);
     }
   }, []);
 
@@ -187,13 +189,6 @@ export function useTournamentApp() {
     setFormShortName("");
   }, []);
 
-  const clearTeamForm = useCallback(() => {
-    setEditTeamId(null);
-    setFormName("");
-    setFormNotes("");
-    setFormColor("#14b8a6");
-    setFormShortName("");
-  }, []);
 
   const submitTeam = useCallback(
     async (e: React.FormEvent) => {
@@ -321,9 +316,9 @@ export function useTournamentApp() {
   const selectTeam = useCallback(
     (id: number) => {
       setSelectedId(id);
-      clearTeamForm();
+      cancelEdit();
     },
-    [clearTeamForm],
+    [cancelEdit],
   );
 
   const loadPlayerDetail = useCallback(async (teamId: number, playerName: string) => {
@@ -392,7 +387,6 @@ export function useTournamentApp() {
       try {
         await tournamentApi.runLeagueDraw({ weeksCount });
         await loadAll();
-        setLeagueDrawCompleted(false);
         setSuccessMessage("Lig fikstürü oluşturuldu.");
       } catch (e) {
         setError(String(e));
@@ -403,9 +397,6 @@ export function useTournamentApp() {
     [loadAll],
   );
 
-  const markLeagueDrawCompleted = useCallback(() => {
-    setLeagueDrawCompleted(true);
-  }, []);
 
   const resetAllAction = useCallback(async () => {
     setError(null);
@@ -553,6 +544,22 @@ export function useTournamentApp() {
     }
   }, [loadAll, matchSheetId]);
 
+  const deleteMatchAction = useCallback(async () => {
+    if (matchSheetId == null) return;
+    setError(null);
+    setSavingMatch(true);
+    try {
+      await matchApi.deleteMatch(matchSheetId);
+      setSuccessMessage("Maç başarıyla silindi.");
+      setMatchSheetId(null);
+      await loadAll();
+    } catch (e) {
+      setError(String(e));
+    } finally {
+      setSavingMatch(false);
+    }
+  }, [loadAll, matchSheetId]);
+
   const addMatchAction = useCallback(
     async (input: {
       homeTeamId: number;
@@ -589,6 +596,18 @@ export function useTournamentApp() {
     },
     [loadAll, matchSheetId],
   );
+
+  const generateGenelKnockoutsAction = useCallback(async () => {
+    setError(null);
+    try {
+      await tournamentApi.generateGenelKnockouts();
+      setSuccessMessage("Sonraki aşama maçları oluşturuldu.");
+      await loadAll();
+    } catch (e) {
+      setError(String(e));
+      throw e;
+    }
+  }, [loadAll]);
 
   const hasDraw = groups.length > 0;
   const teamCount = teams.length;
@@ -629,6 +648,7 @@ export function useTournamentApp() {
     error,
     successMessage,
     loadingTeams,
+    loadingStandings,
     loadingMembers,
     savingTeam,
     savingMember,
@@ -637,8 +657,6 @@ export function useTournamentApp() {
     drawRunning,
     adjustingGroups,
     planningSchedule,
-    leagueDrawCompleted,
-    markLeagueDrawCompleted,
     teamPendingDelete,
     memberPendingDelete,
     formName,
@@ -695,10 +713,12 @@ export function useTournamentApp() {
     savingMatch,
     saveMatchScores,
     resetMatchAction,
+    deleteMatchAction,
     addEvent,
     removeEvent,
     loadAll,
     addMatchAction,
+    generateGenelKnockoutsAction,
   };
 }
 

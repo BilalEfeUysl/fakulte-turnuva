@@ -42,7 +42,7 @@ fn date_plus_days(conn: &rusqlite::Connection, start_date: &str, days: i64) -> R
 
 fn get_groups_internal(conn: &rusqlite::Connection) -> Result<Vec<GroupWithTeams>, String> {
     let mut stmt = conn
-        .prepare("SELECT id, name, sort_order FROM groups ORDER BY sort_order, id")
+        .prepare("SELECT id, name, sort_order FROM groups WHERE name != 'Manuel' ORDER BY sort_order, id")
         .map_err(|e| e.to_string())?;
     let rows = stmt
         .query_map([], |row| {
@@ -439,6 +439,7 @@ fn standings_for_group(
 
 fn standings_for_league(conn: &rusqlite::Connection) -> Result<Vec<StandingRow>, String> {
     let mut acc: HashMap<i64, Acc> = HashMap::new();
+    let mut h2h: HashMap<(i64, i64), H2H> = HashMap::new();
 
     let mut teams_stmt = conn
         .prepare("SELECT id FROM teams ORDER BY name COLLATE NOCASE")
@@ -499,6 +500,14 @@ fn standings_for_league(conn: &rusqlite::Connection) -> Result<Vec<StandingRow>,
                 x.lost += 1;
             }
         }
+        let hk = (h, a);
+        let ak = (a, h);
+        let mut hh = h2h.get(&hk).cloned().unwrap_or_default();
+        let mut aa = h2h.get(&ak).cloned().unwrap_or_default();
+        hh.gd += hs - aws;
+        aa.gd += aws - hs;
+        h2h.insert(hk, hh);
+        h2h.insert(ak, aa);
     }
 
     let mut rows: Vec<StandingRow> = team_ids
@@ -527,6 +536,11 @@ fn standings_for_league(conn: &rusqlite::Connection) -> Result<Vec<StandingRow>,
     rows.sort_by(|x, y| {
         y.points
             .cmp(&x.points)
+            .then_with(|| {
+                let xh = h2h.get(&(x.team_id, y.team_id)).cloned().unwrap_or_default();
+                let yh = h2h.get(&(y.team_id, x.team_id)).cloned().unwrap_or_default();
+                yh.gd.cmp(&xh.gd)
+            })
             .then_with(|| y.gd.cmp(&x.gd))
             .then_with(|| y.gf.cmp(&x.gf))
             .then_with(|| x.team_name.cmp(&y.team_name))
@@ -539,105 +553,163 @@ fn standings_for_league(conn: &rusqlite::Connection) -> Result<Vec<StandingRow>,
     Ok(rows)
 }
 
-fn upsert_knockout(conn: &rusqlite::Connection) -> Result<(), String> {
-    let league_matches: i64 = conn
-        .query_row(
-            "SELECT COUNT(*) FROM matches WHERE stage = 'league'",
-            [],
-            |r| r.get(0),
+fn standings_for_all(conn: &rusqlite::Connection) -> Result<Vec<StandingRow>, String> {
+    let mut acc: HashMap<i64, Acc> = HashMap::new();
+    let mut h2h: HashMap<(i64, i64), H2H> = HashMap::new();
+
+    let mut teams_stmt = conn
+        .prepare("SELECT id FROM teams ORDER BY name COLLATE NOCASE")
+        .map_err(|e| e.to_string())?;
+    let team_rows = teams_stmt
+        .query_map([], |row| row.get::<_, i64>(0))
+        .map_err(|e| e.to_string())?;
+    let mut team_ids = Vec::new();
+    for r in team_rows {
+        let tid = r.map_err(|e| e.to_string())?;
+        team_ids.push(tid);
+        acc.insert(tid, Acc::default());
+    }
+
+    let mut ms = conn
+        .prepare(
+            "SELECT home_team_id, away_team_id, home_score, away_score
+             FROM matches
+             WHERE status = 'finished'
+             AND stage NOT IN ('semi', 'final', 'Playoff', 'Yarı Final', 'Final')",
         )
         .map_err(|e| e.to_string())?;
 
+    let mrows = ms
+        .query_map([], |row| {
+            Ok((
+                row.get::<_, i64>(0)?,
+                row.get::<_, i64>(1)?,
+                row.get::<_, i64>(2)?,
+                row.get::<_, i64>(3)?,
+            ))
+        })
+        .map_err(|e| e.to_string())?;
+
+    for mr in mrows {
+        let (h, a, hs, aws) = mr.map_err(|e| e.to_string())?;
+
+        if let Some(x) = acc.get_mut(&h) {
+            x.played += 1;
+            x.gf += hs;
+            x.ga += aws;
+            if hs > aws {
+                x.won += 1;
+            } else if hs == aws {
+                x.drawn += 1;
+            } else {
+                x.lost += 1;
+            }
+        }
+        if let Some(x) = acc.get_mut(&a) {
+            x.played += 1;
+            x.gf += aws;
+            x.ga += hs;
+            if aws > hs {
+                x.won += 1;
+            } else if aws == hs {
+                x.drawn += 1;
+            } else {
+                x.lost += 1;
+            }
+        }
+        let hk = (h, a);
+        let ak = (a, h);
+        let mut hh = h2h.get(&hk).cloned().unwrap_or_default();
+        let mut aa = h2h.get(&ak).cloned().unwrap_or_default();
+        hh.gd += hs - aws;
+        aa.gd += aws - hs;
+        h2h.insert(hk, hh);
+        h2h.insert(ak, aa);
+    }
+
+    let mut rows: Vec<StandingRow> = team_ids
+        .iter()
+        .filter_map(|tid| {
+            let a = acc.get(tid)?.clone();
+            let points = a.won * 3 + a.drawn;
+            let gd = a.gf - a.ga;
+            let name = team_name(conn, *tid).ok()?;
+            Some(StandingRow {
+                rank: 0,
+                team_id: *tid,
+                team_name: name,
+                played: a.played,
+                won: a.won,
+                drawn: a.drawn,
+                lost: a.lost,
+                gf: a.gf,
+                ga: a.ga,
+                gd,
+                points,
+            })
+        })
+        .collect();
+
+    rows.sort_by(|x, y| {
+        y.points
+            .cmp(&x.points)
+            .then_with(|| {
+                let xh = h2h.get(&(x.team_id, y.team_id)).cloned().unwrap_or_default();
+                let yh = h2h.get(&(y.team_id, x.team_id)).cloned().unwrap_or_default();
+                yh.gd.cmp(&xh.gd)
+            })
+            .then_with(|| y.gd.cmp(&x.gd))
+            .then_with(|| y.gf.cmp(&x.gf))
+            .then_with(|| x.team_name.cmp(&y.team_name))
+    });
+
+    for (i, row) in rows.iter_mut().enumerate() {
+        row.rank = (i + 1) as i64;
+    }
+
+    Ok(rows)
+}
+
+pub(crate) fn upsert_knockout(conn: &rusqlite::Connection) -> Result<(), String> {
+    let finished_knockouts: i64 = conn.query_row(
+        "SELECT COUNT(*) FROM matches WHERE stage IN ('semi', 'final') AND status = 'finished'",
+        [], |r| r.get(0)
+    ).unwrap_or(0);
+
+    let league_matches: i64 = conn.query_row("SELECT COUNT(*) FROM matches WHERE stage = 'league'", [], |r| r.get(0)).map_err(|e| e.to_string())?;
     if league_matches > 0 {
-        if !all_league_matches_finished(conn)? {
-            return Ok(());
-        }
-
+        if !all_league_matches_finished(conn)? { return Ok(()); }
         let rows = standings_for_league(conn)?;
-        if rows.len() < 4 {
-            return Ok(());
+        if rows.len() < 4 { return Ok(()); }
+        
+        if finished_knockouts == 0 {
+            let rank1 = rows[0].team_id; let rank2 = rows[1].team_id; let rank3 = rows[2].team_id; let rank4 = rows[3].team_id;
+            conn.execute("DELETE FROM match_events WHERE match_id IN (SELECT id FROM matches WHERE stage IN ('semi', 'final'))", []).map_err(|e| e.to_string())?;
+            conn.execute("DELETE FROM matches WHERE stage IN ('semi', 'final')", []).map_err(|e| e.to_string())?;
+            let league_gid: i64 = conn.query_row("SELECT id FROM groups WHERE name = 'L'", [], |r| r.get(0)).unwrap_or(0);
+            conn.execute("INSERT INTO matches (group_id, home_team_id, away_team_id, stage, stage_slot, match_order, matchday_no, calendar_slot, status) VALUES (?1, ?2, ?3, 'semi', 'SF1', 1, 0, 0, 'scheduled')", params![league_gid, rank1, rank4]).map_err(|e| e.to_string())?;
+            conn.execute("INSERT INTO matches (group_id, home_team_id, away_team_id, stage, stage_slot, match_order, matchday_no, calendar_slot, status) VALUES (?1, ?2, ?3, 'semi', 'SF2', 2, 0, 0, 'scheduled')", params![league_gid, rank2, rank3]).map_err(|e| e.to_string())?;
         }
-
-        let rank1 = rows[0].team_id;
-        let rank2 = rows[1].team_id;
-        let rank3 = rows[2].team_id;
-        let rank4 = rows[3].team_id;
-
-        conn.execute(
-            "DELETE FROM match_events WHERE match_id IN (SELECT id FROM matches WHERE stage IN ('semi', 'final'))",
-            [],
-        )
-        .map_err(|e| e.to_string())?;
-        conn.execute("DELETE FROM matches WHERE stage IN ('semi', 'final')", [])
-            .map_err(|e| e.to_string())?;
-
-        let league_gid: i64 = conn
-            .query_row(
-                "SELECT id FROM groups WHERE name = 'L'",
-                [],
-                |r| r.get(0),
-            )
-            .unwrap_or(0);
-
-        conn.execute(
-            "INSERT INTO matches (
-                group_id, home_team_id, away_team_id, stage, stage_slot,
-                match_order, matchday_no, scheduled_date, calendar_slot, status
-             ) VALUES (?1, ?2, ?3, 'semi', 'SF1', 1, 0, NULL, 0, 'scheduled')",
-            params![league_gid, rank1, rank4],
-        )
-        .map_err(|e| e.to_string())?;
-        conn.execute(
-            "INSERT INTO matches (
-                group_id, home_team_id, away_team_id, stage, stage_slot,
-                match_order, matchday_no, scheduled_date, calendar_slot, status
-             ) VALUES (?1, ?2, ?3, 'semi', 'SF2', 2, 0, NULL, 0, 'scheduled')",
-            params![league_gid, rank2, rank3],
-        )
-        .map_err(|e| e.to_string())?;
-
         return Ok(());
     }
 
-    // A/B group mode (legacy)
-    if !all_group_matches_finished(conn)? {
-        return Ok(());
-    }
-
+    if !all_group_matches_finished(conn)? { return Ok(()); }
     let groups = get_groups_internal(conn)?;
     let a = groups.iter().find(|g| g.name == "A");
     let b = groups.iter().find(|g| g.name == "B");
     if let (Some(ga), Some(gb)) = (a, b) {
         let ar = standings_for_group(conn, ga)?;
         let br = standings_for_group(conn, gb)?;
-        if ar.len() < 2 || br.len() < 2 {
-            return Ok(());
+        if ar.len() < 2 || br.len() < 2 { return Ok(()); }
+        
+        if finished_knockouts == 0 {
+            conn.execute("DELETE FROM match_events WHERE match_id IN (SELECT id FROM matches WHERE stage IN ('semi', 'final'))", []).map_err(|e| e.to_string())?;
+            conn.execute("DELETE FROM matches WHERE stage IN ('semi', 'final')", []).map_err(|e| e.to_string())?;
+            conn.execute("INSERT INTO matches (group_id, home_team_id, away_team_id, stage, stage_slot, match_order, matchday_no, calendar_slot, status) VALUES (?1, ?2, ?3, 'semi', 'SF1', 1, 0, 0, 'scheduled')", params![ga.id, ar[0].team_id, br[1].team_id]).map_err(|e| e.to_string())?;
+            conn.execute("INSERT INTO matches (group_id, home_team_id, away_team_id, stage, stage_slot, match_order, matchday_no, calendar_slot, status) VALUES (?1, ?2, ?3, 'semi', 'SF2', 2, 0, 0, 'scheduled')", params![gb.id, br[0].team_id, ar[1].team_id]).map_err(|e| e.to_string())?;
         }
-        conn.execute(
-            "DELETE FROM match_events WHERE match_id IN (SELECT id FROM matches WHERE stage IN ('semi', 'final'))",
-            [],
-        )
-        .map_err(|e| e.to_string())?;
-        conn.execute("DELETE FROM matches WHERE stage IN ('semi', 'final')", [])
-            .map_err(|e| e.to_string())?;
-
-        conn.execute(
-            "INSERT INTO matches (
-                group_id, home_team_id, away_team_id, stage, stage_slot,
-                match_order, matchday_no, scheduled_date, calendar_slot, status
-             ) VALUES (?1, ?2, ?3, 'semi', 'SF1', 1, 0, NULL, 0, 'scheduled')",
-            params![ga.id, ar[0].team_id, br[1].team_id],
-        )
-        .map_err(|e| e.to_string())?;
-        conn.execute(
-            "INSERT INTO matches (
-                group_id, home_team_id, away_team_id, stage, stage_slot,
-                match_order, matchday_no, scheduled_date, calendar_slot, status
-             ) VALUES (?1, ?2, ?3, 'semi', 'SF2', 2, 0, NULL, 0, 'scheduled')",
-            params![gb.id, br[0].team_id, ar[1].team_id],
-        )
-        .map_err(|e| e.to_string())?;
     }
+
     Ok(())
 }
 
@@ -830,6 +902,7 @@ pub fn get_group_schedule_settings(db: tauri::State<DbConn>) -> Result<Vec<Group
             "SELECT g.id, g.name, COALESCE(s.daily_limit, 1)
              FROM groups g
              LEFT JOIN group_schedule_settings s ON s.group_id = g.id
+             WHERE g.name != 'Manuel'
              ORDER BY g.sort_order, g.id",
         )
         .map_err(|e| e.to_string())?;
@@ -873,6 +946,7 @@ pub fn update_group_daily_limit(
             "SELECT g.id, g.name, COALESCE(s.daily_limit, 1)
              FROM groups g
              LEFT JOIN group_schedule_settings s ON s.group_id = g.id
+             WHERE g.name != 'Manuel'
              ORDER BY g.sort_order, g.id",
         )
         .map_err(|e| e.to_string())?;
@@ -940,34 +1014,7 @@ pub fn get_standings(db: tauri::State<DbConn>) -> Result<Vec<GroupStandings>, St
     let groups = get_groups_internal(&conn)?;
 
     if groups.is_empty() {
-        let mut stmt = conn
-            .prepare("SELECT id, name FROM teams ORDER BY name COLLATE NOCASE")
-            .map_err(|e| e.to_string())?;
-        let team_rows: Vec<(i64, String)> = stmt
-            .query_map([], |row| Ok((row.get(0)?, row.get(1)?)))
-            .map_err(|e| e.to_string())?
-            .collect::<Result<_, rusqlite::Error>>()
-            .map_err(|e| e.to_string())?;
-        if team_rows.is_empty() {
-            return Ok(vec![]);
-        }
-        let rows: Vec<StandingRow> = team_rows
-            .iter()
-            .enumerate()
-            .map(|(i, (tid, name))| StandingRow {
-                rank: (i + 1) as i64,
-                team_id: *tid,
-                team_name: name.clone(),
-                played: 0,
-                won: 0,
-                drawn: 0,
-                lost: 0,
-                gf: 0,
-                ga: 0,
-                gd: 0,
-                points: 0,
-            })
-            .collect();
+        let rows = standings_for_all(&conn)?;
         return Ok(vec![GroupStandings {
             group_id: 0,
             group_name: "Genel".to_string(),
@@ -1017,4 +1064,63 @@ pub fn reset_teams(db: tauri::State<DbConn>) -> Result<(), String> {
          DELETE FROM teams;",
     )
     .map_err(|e| e.to_string())
+}
+
+#[tauri::command]
+pub fn generate_genel_knockouts(db: tauri::State<DbConn>) -> Result<(), String> {
+    let conn = db.0.lock().map_err(|e| e.to_string())?;
+    
+    let rows = standings_for_all(&conn)?;
+    let po_cnt: i64 = conn.query_row("SELECT COUNT(*) FROM matches WHERE stage = 'Playoff' AND status = 'finished'", [], |r| r.get(0)).unwrap_or(0);
+    let yf_cnt: i64 = conn.query_row("SELECT COUNT(*) FROM matches WHERE stage = 'Yarı Final' AND status = 'finished'", [], |r| r.get(0)).unwrap_or(0);
+    let manual_gid: i64 = conn.query_row("SELECT id FROM groups WHERE name = 'Manuel'", [], |r| r.get(0))
+        .map_err(|_| "'Manuel' grubu bulunamadı. Önce manuel maç ekleyerek grubu oluşturun.".to_string())?;
+
+    let po_exists: i64 = conn.query_row("SELECT COUNT(*) FROM matches WHERE stage = 'Playoff'", [], |r| r.get(0)).unwrap_or(0);
+    if po_exists == 0 && rows.len() >= 6 {
+        let r3 = rows[2].team_id; let r4 = rows[3].team_id; let r5 = rows[4].team_id; let r6 = rows[5].team_id;
+        conn.execute("INSERT INTO matches (group_id, home_team_id, away_team_id, stage, stage_slot, match_order, matchday_no, calendar_slot, status) VALUES (?1, ?2, ?3, 'Playoff', 'PO1', 1, 0, 0, 'scheduled')", params![manual_gid, r3, r6]).map_err(|e| e.to_string())?;
+        conn.execute("INSERT INTO matches (group_id, home_team_id, away_team_id, stage, stage_slot, match_order, matchday_no, calendar_slot, status) VALUES (?1, ?2, ?3, 'Playoff', 'PO2', 2, 0, 0, 'scheduled')", params![manual_gid, r4, r5]).map_err(|e| e.to_string())?;
+        return Ok(());
+    }
+
+    let yf_exists: i64 = conn.query_row("SELECT COUNT(*) FROM matches WHERE stage = 'Yarı Final'", [], |r| r.get(0)).unwrap_or(0);
+    if po_cnt == 2 && yf_exists == 0 && rows.len() >= 2 {
+        let mut stmt = conn.prepare("SELECT home_team_id, away_team_id, home_score, away_score, stage_slot FROM matches WHERE stage = 'Playoff' ORDER BY stage_slot").map_err(|e| e.to_string())?;
+        let mrows = stmt.query_map([], |r| Ok((r.get::<_, i64>(0)?, r.get::<_, i64>(1)?, r.get::<_, i64>(2)?, r.get::<_, i64>(3)?, r.get::<_, String>(4)?))).map_err(|e| e.to_string())?;
+        let mut w1 = None; let mut w2 = None;
+        for r in mrows {
+            let (h, a, hs, as_, slot) = r.map_err(|e| e.to_string())?;
+            let winner = if hs > as_ { Some(h) } else if as_ > hs { Some(a) } else { None };
+            if slot == "PO1" { w1 = winner; } else { w2 = winner; }
+        }
+        if let (Some(win_po1), Some(win_po2)) = (w1, w2) {
+            let r1 = rows[0].team_id; let r2 = rows[1].team_id;
+            conn.execute("INSERT INTO matches (group_id, home_team_id, away_team_id, stage, stage_slot, match_order, matchday_no, calendar_slot, status) VALUES (?1, ?2, ?3, 'Yarı Final', 'YF1', 1, 0, 0, 'scheduled')", params![manual_gid, r1, win_po2]).map_err(|e| e.to_string())?;
+            conn.execute("INSERT INTO matches (group_id, home_team_id, away_team_id, stage, stage_slot, match_order, matchday_no, calendar_slot, status) VALUES (?1, ?2, ?3, 'Yarı Final', 'YF2', 2, 0, 0, 'scheduled')", params![manual_gid, r2, win_po1]).map_err(|e| e.to_string())?;
+            return Ok(());
+        } else {
+            return Err("Playoff maçlarında berabere biten maç var; kazananlar belirlenemedi.".to_string());
+        }
+    }
+
+    let f_exists: i64 = conn.query_row("SELECT COUNT(*) FROM matches WHERE stage = 'Final'", [], |r| r.get(0)).unwrap_or(0);
+    if yf_cnt == 2 && f_exists == 0 {
+        let mut stmt = conn.prepare("SELECT home_team_id, away_team_id, home_score, away_score, stage_slot FROM matches WHERE stage = 'Yarı Final' ORDER BY stage_slot").map_err(|e| e.to_string())?;
+        let mrows = stmt.query_map([], |r| Ok((r.get::<_, i64>(0)?, r.get::<_, i64>(1)?, r.get::<_, i64>(2)?, r.get::<_, i64>(3)?, r.get::<_, String>(4)?))).map_err(|e| e.to_string())?;
+        let mut w1 = None; let mut w2 = None;
+        for r in mrows {
+            let (h, a, hs, as_, slot) = r.map_err(|e| e.to_string())?;
+            let winner = if hs > as_ { Some(h) } else if as_ > hs { Some(a) } else { None };
+            if slot == "YF1" { w1 = winner; } else { w2 = winner; }
+        }
+        if let (Some(win1), Some(win2)) = (w1, w2) {
+            conn.execute("INSERT INTO matches (group_id, home_team_id, away_team_id, stage, stage_slot, match_order, matchday_no, calendar_slot, status) VALUES (?1, ?2, ?3, 'Final', 'F', 1, 0, 0, 'scheduled')", params![manual_gid, win1, win2]).map_err(|e| e.to_string())?;
+            return Ok(());
+        } else {
+            return Err("Yarı Final maçlarında berabere biten maç var; finalistler belirlenemedi.".to_string());
+        }
+    }
+
+    Ok(())
 }

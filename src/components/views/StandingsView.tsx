@@ -18,51 +18,32 @@ function groupLabel(name: string): string {
 }
 
 export function StandingsView({ app }: Props) {
-  const { standings, teams, loadingTeams } = app;
+  const { standings, loadingStandings } = app;
 
   const teamById = useMemo(
     () => new Map(app.teams.map((t) => [t.id, t])),
     [app.teams]
   );
 
-  // Takımlar varken backend boş döndürürse (yükleme yarış koşulu vb.) direkt teamlardan üret
-  const effectiveStandings = useMemo((): GroupStandings[] => {
-    if (standings.length > 0) return standings;
-    if (teams.length === 0) return [];
-    return [{
-      group_id: 0,
-      group_name: "Genel",
-      rows: [...teams]
-        .sort((a, b) => a.name.localeCompare(b.name, "tr"))
-        .map((t, i) => ({
-          rank: i + 1,
-          team_id: t.id,
-          team_name: t.name,
-          played: 0, won: 0, drawn: 0, lost: 0,
-          gf: 0, ga: 0, gd: 0, points: 0,
-        })),
-    }];
-  }, [standings, teams]);
-
-  if (loadingTeams) {
+  if (loadingStandings) {
     return <div className="empty-state">Yükleniyor…</div>;
   }
 
-  if (effectiveStandings.length === 0) {
+  if (standings.length === 0) {
     return (
       <div className="empty-state">
-        <strong>Takım yok</strong>
+        <strong>Puan tablosu henüz hazır değil</strong>
       </div>
     );
   }
 
-  const isPreDraw = effectiveStandings.length === 1 && effectiveStandings[0].group_name === "Genel";
+  const isPreDraw = standings.length === 1 && standings[0].group_name === "Genel";
 
   return (
     <div className="standings-view">
       <h2 style={{ margin: "0 0 1.25rem", fontSize: "1.35rem", fontWeight: 800 }}>Puan durumu</h2>
       <div className="standings-wrap">
-        {effectiveStandings.map((g) => (
+        {standings.map((g: GroupStandings) => (
           <div key={g.group_id} className="standings-card">
             <div className="standings-card__head">{groupLabel(g.group_name)}</div>
             <table className="standings-table">
@@ -87,7 +68,7 @@ export function StandingsView({ app }: Props) {
                   return (
                     <tr key={r.team_id} className={["rank-" + r.rank, zone].filter(Boolean).join(" ")}>
                       <td>
-                        <span className={zone ? `standings-rank-badge standings-rank-badge--${zone}` : undefined}>
+                        <span className={`standings-rank-badge${zone ? ` standings-rank-badge--${zone}` : ""}`}>
                           {r.rank}
                         </span>
                       </td>

@@ -133,13 +133,6 @@ pub fn init_db(app: &tauri::AppHandle) -> Result<Connection, Box<dyn std::error:
         "calendar_slot",
         "INTEGER NOT NULL DEFAULT 0",
     )?;
-    conn.execute(
-        "CREATE TABLE IF NOT EXISTS group_schedule_settings (
-            group_id INTEGER PRIMARY KEY REFERENCES groups(id) ON DELETE CASCADE,
-            daily_limit INTEGER NOT NULL DEFAULT 1
-        )",
-        [],
-    )?;
     Ok(conn)
 }
 

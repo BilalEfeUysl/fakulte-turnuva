@@ -179,6 +179,7 @@ pub fn update_match(db: tauri::State<DbConn>, payload: UpdateMatchPayload) -> Re
             params![payload.home_score, payload.away_score, st, payload.id],
         )
         .map_err(|e| e.to_string())?;
+    crate::commands::tournament::upsert_knockout(&conn)?;
     maybe_generate_final(&conn)?;
     Ok(())
 }
@@ -352,4 +353,13 @@ pub fn reset_match(db: tauri::State<DbConn>, match_id: i64) -> Result<(), String
     ).map_err(|e| e.to_string())?;
 
     Ok(())
+}
+
+#[tauri::command]
+pub fn delete_match(db: tauri::State<DbConn>, match_id: i64) -> Result<(), String> {
+    let mut conn = db.0.lock().map_err(|e| e.to_string())?;
+    let tx = conn.transaction().map_err(|e| e.to_string())?;
+    tx.execute("DELETE FROM match_events WHERE match_id = ?1", params![match_id]).map_err(|e| e.to_string())?;
+    tx.execute("DELETE FROM matches WHERE id = ?1", params![match_id]).map_err(|e| e.to_string())?;
+    tx.commit().map_err(|e| e.to_string())
 }
