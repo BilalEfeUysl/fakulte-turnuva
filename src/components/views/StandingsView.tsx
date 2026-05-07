@@ -63,9 +63,9 @@ export function StandingsView({ app }: Props) {
               </thead>
               <tbody>
                 {g.rows.map((r, i) => {
-                  const zone = isPreDraw ? "" : rowZoneClass(r.rank);
-                  const prevZone = i > 0 && !isPreDraw ? rowZoneClass(g.rows[i - 1].rank) : "";
-                  const nextZone = i < g.rows.length - 1 && !isPreDraw ? rowZoneClass(g.rows[i + 1].rank) : "";
+                  const zone = rowZoneClass(r.rank);
+                  const prevZone = i > 0 ? rowZoneClass(g.rows[i - 1].rank) : "";
+                  const nextZone = i < g.rows.length - 1 ? rowZoneClass(g.rows[i + 1].rank) : "";
                   const isFirst = zone && zone !== prevZone;
                   const isLast = zone && zone !== nextZone;
                   const team = teamById.get(r.team_id);
@@ -109,22 +109,20 @@ export function StandingsView({ app }: Props) {
           </div>
         ))}
       </div>
-      {!isPreDraw && (
-        <div className="standings-legend">
-          <span className="standings-legend__item standings-legend__item--sf">
-            <span className="standings-legend__dot" />
-            Yarı Finalist (1.–2. sıra)
-          </span>
-          <span className="standings-legend__item standings-legend__item--po">
-            <span className="standings-legend__dot" />
-            Playoff (3.–6. sıra)
-          </span>
-          <span className="standings-legend__item">
-            <span className="standings-legend__dot standings-legend__dot--neutral" />
-            Elendi (7.+)
-          </span>
-        </div>
-      )}
+      <div className="standings-legend">
+        <span className="standings-legend__item standings-legend__item--sf">
+          <span className="standings-legend__dot" />
+          Yarı Finalist (1.–2. sıra)
+        </span>
+        <span className="standings-legend__item standings-legend__item--po">
+          <span className="standings-legend__dot" />
+          Playoff (3.–6. sıra)
+        </span>
+        <span className="standings-legend__item">
+          <span className="standings-legend__dot standings-legend__dot--neutral" />
+          Elendi (7.+)
+        </span>
+      </div>
     </div>
   );
 }
