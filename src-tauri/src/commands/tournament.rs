@@ -10,6 +10,7 @@ use rusqlite::params;
 use std::collections::HashMap;
 
 const REQUIRED_TEAMS: i64 = 10;
+const MANUEL_GROUP: &str = "Manuel";
 
 #[derive(Default, Clone)]
 struct Acc {
@@ -42,10 +43,10 @@ fn date_plus_days(conn: &rusqlite::Connection, start_date: &str, days: i64) -> R
 
 fn get_groups_internal(conn: &rusqlite::Connection) -> Result<Vec<GroupWithTeams>, String> {
     let mut stmt = conn
-        .prepare("SELECT id, name, sort_order FROM groups WHERE name != 'Manuel' ORDER BY sort_order, id")
+        .prepare("SELECT id, name, sort_order FROM groups WHERE name != ?1 ORDER BY sort_order, id")
         .map_err(|e| e.to_string())?;
     let rows = stmt
-        .query_map([], |row| {
+        .query_map(params![MANUEL_GROUP], |row| {
             Ok((
                 row.get::<_, i64>(0)?,
                 row.get::<_, String>(1)?,
@@ -437,7 +438,7 @@ fn standings_for_group(
     Ok(rows)
 }
 
-fn standings_for_league(conn: &rusqlite::Connection) -> Result<Vec<StandingRow>, String> {
+fn compute_standings(conn: &rusqlite::Connection, match_sql: &str) -> Result<Vec<StandingRow>, String> {
     let mut acc: HashMap<i64, Acc> = HashMap::new();
     let mut h2h: HashMap<(i64, i64), H2H> = HashMap::new();
 
@@ -454,14 +455,7 @@ fn standings_for_league(conn: &rusqlite::Connection) -> Result<Vec<StandingRow>,
         acc.insert(tid, Acc::default());
     }
 
-    let mut ms = conn
-        .prepare(
-            "SELECT home_team_id, away_team_id, home_score, away_score
-             FROM matches
-             WHERE stage = 'league' AND status = 'finished'",
-        )
-        .map_err(|e| e.to_string())?;
-
+    let mut ms = conn.prepare(match_sql).map_err(|e| e.to_string())?;
     let mrows = ms
         .query_map([], |row| {
             Ok((
@@ -480,25 +474,13 @@ fn standings_for_league(conn: &rusqlite::Connection) -> Result<Vec<StandingRow>,
             x.played += 1;
             x.gf += hs;
             x.ga += aws;
-            if hs > aws {
-                x.won += 1;
-            } else if hs == aws {
-                x.drawn += 1;
-            } else {
-                x.lost += 1;
-            }
+            if hs > aws { x.won += 1; } else if hs == aws { x.drawn += 1; } else { x.lost += 1; }
         }
         if let Some(x) = acc.get_mut(&a) {
             x.played += 1;
             x.gf += aws;
             x.ga += hs;
-            if aws > hs {
-                x.won += 1;
-            } else if aws == hs {
-                x.drawn += 1;
-            } else {
-                x.lost += 1;
-            }
+            if aws > hs { x.won += 1; } else if aws == hs { x.drawn += 1; } else { x.lost += 1; }
         }
         let hk = (h, a);
         let ak = (a, h);
@@ -553,121 +535,21 @@ fn standings_for_league(conn: &rusqlite::Connection) -> Result<Vec<StandingRow>,
     Ok(rows)
 }
 
+fn standings_for_league(conn: &rusqlite::Connection) -> Result<Vec<StandingRow>, String> {
+    compute_standings(
+        conn,
+        "SELECT home_team_id, away_team_id, home_score, away_score \
+         FROM matches WHERE stage = 'league' AND status = 'finished'",
+    )
+}
+
 fn standings_for_all(conn: &rusqlite::Connection) -> Result<Vec<StandingRow>, String> {
-    let mut acc: HashMap<i64, Acc> = HashMap::new();
-    let mut h2h: HashMap<(i64, i64), H2H> = HashMap::new();
-
-    let mut teams_stmt = conn
-        .prepare("SELECT id FROM teams ORDER BY name COLLATE NOCASE")
-        .map_err(|e| e.to_string())?;
-    let team_rows = teams_stmt
-        .query_map([], |row| row.get::<_, i64>(0))
-        .map_err(|e| e.to_string())?;
-    let mut team_ids = Vec::new();
-    for r in team_rows {
-        let tid = r.map_err(|e| e.to_string())?;
-        team_ids.push(tid);
-        acc.insert(tid, Acc::default());
-    }
-
-    let mut ms = conn
-        .prepare(
-            "SELECT home_team_id, away_team_id, home_score, away_score
-             FROM matches
-             WHERE status = 'finished'
-             AND stage NOT IN ('semi', 'final', 'Playoff', 'Yarı Final', 'Final')",
-        )
-        .map_err(|e| e.to_string())?;
-
-    let mrows = ms
-        .query_map([], |row| {
-            Ok((
-                row.get::<_, i64>(0)?,
-                row.get::<_, i64>(1)?,
-                row.get::<_, i64>(2)?,
-                row.get::<_, i64>(3)?,
-            ))
-        })
-        .map_err(|e| e.to_string())?;
-
-    for mr in mrows {
-        let (h, a, hs, aws) = mr.map_err(|e| e.to_string())?;
-
-        if let Some(x) = acc.get_mut(&h) {
-            x.played += 1;
-            x.gf += hs;
-            x.ga += aws;
-            if hs > aws {
-                x.won += 1;
-            } else if hs == aws {
-                x.drawn += 1;
-            } else {
-                x.lost += 1;
-            }
-        }
-        if let Some(x) = acc.get_mut(&a) {
-            x.played += 1;
-            x.gf += aws;
-            x.ga += hs;
-            if aws > hs {
-                x.won += 1;
-            } else if aws == hs {
-                x.drawn += 1;
-            } else {
-                x.lost += 1;
-            }
-        }
-        let hk = (h, a);
-        let ak = (a, h);
-        let mut hh = h2h.get(&hk).cloned().unwrap_or_default();
-        let mut aa = h2h.get(&ak).cloned().unwrap_or_default();
-        hh.gd += hs - aws;
-        aa.gd += aws - hs;
-        h2h.insert(hk, hh);
-        h2h.insert(ak, aa);
-    }
-
-    let mut rows: Vec<StandingRow> = team_ids
-        .iter()
-        .filter_map(|tid| {
-            let a = acc.get(tid)?.clone();
-            let points = a.won * 3 + a.drawn;
-            let gd = a.gf - a.ga;
-            let name = team_name(conn, *tid).ok()?;
-            Some(StandingRow {
-                rank: 0,
-                team_id: *tid,
-                team_name: name,
-                played: a.played,
-                won: a.won,
-                drawn: a.drawn,
-                lost: a.lost,
-                gf: a.gf,
-                ga: a.ga,
-                gd,
-                points,
-            })
-        })
-        .collect();
-
-    rows.sort_by(|x, y| {
-        y.points
-            .cmp(&x.points)
-            .then_with(|| {
-                let xh = h2h.get(&(x.team_id, y.team_id)).cloned().unwrap_or_default();
-                let yh = h2h.get(&(y.team_id, x.team_id)).cloned().unwrap_or_default();
-                yh.gd.cmp(&xh.gd)
-            })
-            .then_with(|| y.gd.cmp(&x.gd))
-            .then_with(|| y.gf.cmp(&x.gf))
-            .then_with(|| x.team_name.cmp(&y.team_name))
-    });
-
-    for (i, row) in rows.iter_mut().enumerate() {
-        row.rank = (i + 1) as i64;
-    }
-
-    Ok(rows)
+    compute_standings(
+        conn,
+        "SELECT home_team_id, away_team_id, home_score, away_score \
+         FROM matches WHERE status = 'finished' \
+         AND stage NOT IN ('semi', 'final', 'Playoff', 'Yarı Final', 'Final')",
+    )
 }
 
 pub(crate) fn upsert_knockout(conn: &rusqlite::Connection) -> Result<(), String> {
@@ -902,12 +784,12 @@ pub fn get_group_schedule_settings(db: tauri::State<DbConn>) -> Result<Vec<Group
             "SELECT g.id, g.name, COALESCE(s.daily_limit, 1)
              FROM groups g
              LEFT JOIN group_schedule_settings s ON s.group_id = g.id
-             WHERE g.name != 'Manuel'
+             WHERE g.name != ?1
              ORDER BY g.sort_order, g.id",
         )
         .map_err(|e| e.to_string())?;
     let rows = stmt
-        .query_map([], |row| {
+        .query_map(params![MANUEL_GROUP], |row| {
             Ok(GroupScheduleSetting {
                 group_id: row.get(0)?,
                 group_name: row.get(1)?,
@@ -946,12 +828,12 @@ pub fn update_group_daily_limit(
             "SELECT g.id, g.name, COALESCE(s.daily_limit, 1)
              FROM groups g
              LEFT JOIN group_schedule_settings s ON s.group_id = g.id
-             WHERE g.name != 'Manuel'
+             WHERE g.name != ?1
              ORDER BY g.sort_order, g.id",
         )
         .map_err(|e| e.to_string())?;
     let rows = stmt
-        .query_map([], |row| {
+        .query_map(params![MANUEL_GROUP], |row| {
             Ok(GroupScheduleSetting {
                 group_id: row.get(0)?,
                 group_name: row.get(1)?,
@@ -1073,7 +955,7 @@ pub fn generate_genel_knockouts(db: tauri::State<DbConn>) -> Result<(), String> 
     let rows = standings_for_all(&conn)?;
     let po_cnt: i64 = conn.query_row("SELECT COUNT(*) FROM matches WHERE stage = 'Playoff' AND status = 'finished'", [], |r| r.get(0)).unwrap_or(0);
     let yf_cnt: i64 = conn.query_row("SELECT COUNT(*) FROM matches WHERE stage = 'Yarı Final' AND status = 'finished'", [], |r| r.get(0)).unwrap_or(0);
-    let manual_gid: i64 = conn.query_row("SELECT id FROM groups WHERE name = 'Manuel'", [], |r| r.get(0))
+    let manual_gid: i64 = conn.query_row("SELECT id FROM groups WHERE name = ?1", params![MANUEL_GROUP], |r| r.get(0))
         .map_err(|_| "'Manuel' grubu bulunamadı. Önce manuel maç ekleyerek grubu oluşturun.".to_string())?;
 
     let po_exists: i64 = conn.query_row("SELECT COUNT(*) FROM matches WHERE stage = 'Playoff'", [], |r| r.get(0)).unwrap_or(0);

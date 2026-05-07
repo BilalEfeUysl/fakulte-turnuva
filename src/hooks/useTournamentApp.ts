@@ -44,7 +44,6 @@ export function useTournamentApp() {
   const [deletingTeam, setDeletingTeam] = useState(false);
   const [deletingMember, setDeletingMember] = useState(false);
   const [drawRunning, setDrawRunning] = useState(false);
-  const [adjustingGroups, setAdjustingGroups] = useState(false);
   const [planningSchedule, setPlanningSchedule] = useState(false);
 
   const [teamPendingDelete, setTeamPendingDelete] = useState<PendingTeamDelete | null>(null);
@@ -65,9 +64,6 @@ export function useTournamentApp() {
   const [matchEvents, setMatchEvents] = useState<MatchEventRow[]>([]);
   const [loadingMatchEvents, setLoadingMatchEvents] = useState(false);
   const [savingMatch, setSavingMatch] = useState(false);
-  const [scheduleStartDate, setScheduleStartDate] = useState(() =>
-    new Date().toISOString().slice(0, 10),
-  );
 
   useEffect(() => {
     if (!successMessage) return;
@@ -145,7 +141,7 @@ export function useTournamentApp() {
       setMembers([]);
       setTeamPlayersSummary([]);
     }
-  }, [selectedId, teams, loadMembers]);
+  }, [selectedId, loadMembers]);
 
   useEffect(() => {
     if (matchSheetId == null) {
@@ -167,7 +163,7 @@ export function useTournamentApp() {
     return () => {
       cancelled = true;
     };
-  }, [matchSheetId, matches]);
+  }, [matchSheetId]);
 
   const selected = teams.find((t) => t.id === selectedId) ?? null;
   const selectedMatch = matches.find((m) => m.id === matchSheetId) ?? null;
@@ -335,69 +331,6 @@ export function useTournamentApp() {
     setSelectedPlayerSummary(null);
   }, []);
 
-  const runDrawAction = useCallback(async () => {
-    setError(null);
-    setDrawRunning(true);
-    try {
-      await tournamentApi.runDraw();
-      await loadAll();
-      setSuccessMessage("Kura tamamlandı.");
-      setView("fixtures");
-    } catch (e) {
-      setError(String(e));
-    } finally {
-      setDrawRunning(false);
-    }
-  }, [loadAll]);
-
-  const moveGroupTeam = useCallback(async (teamId: number, targetGroup: "A" | "B") => {
-    setAdjustingGroups(true);
-    setError(null);
-    try {
-      await tournamentApi.moveTeamGroup({ teamId, targetGroup });
-      const [g, m] = await Promise.all([tournamentApi.getGroups(), matchApi.listMatches()]);
-      setGroups(g);
-      setMatches(m);
-      setSuccessMessage("Takım grupta taşındı.");
-    } catch (e) {
-      setError(String(e));
-    } finally {
-      setAdjustingGroups(false);
-    }
-  }, []);
-
-  const regenerateFixturesAction = useCallback(async () => {
-    setAdjustingGroups(true);
-    setError(null);
-    try {
-      await tournamentApi.regenerateGroupFixtures();
-      await loadAll();
-      setSuccessMessage("Fikstür yeniden üretildi.");
-    } catch (e) {
-      setError(String(e));
-    } finally {
-      setAdjustingGroups(false);
-    }
-  }, [loadAll]);
-
-  const runLeagueDrawAction = useCallback(
-    async (weeksCount: number) => {
-      setError(null);
-      setDrawRunning(true);
-      try {
-        await tournamentApi.runLeagueDraw({ weeksCount });
-        await loadAll();
-        setSuccessMessage("Lig fikstürü oluşturuldu.");
-      } catch (e) {
-        setError(String(e));
-      } finally {
-        setDrawRunning(false);
-      }
-    },
-    [loadAll],
-  );
-
-
   const resetAllAction = useCallback(async () => {
     setError(null);
     setDrawRunning(true);
@@ -428,33 +361,6 @@ export function useTournamentApp() {
       setDrawRunning(false);
     }
   }, [loadAll]);
-
-  const updateDailyLimit = useCallback(async (groupId: number, dailyLimit: number) => {
-    setPlanningSchedule(true);
-    setError(null);
-    try {
-      const settings = await tournamentApi.updateGroupDailyLimit({ groupId, dailyLimit });
-      setGroupSettings(settings);
-    } catch (e) {
-      setError(String(e));
-    } finally {
-      setPlanningSchedule(false);
-    }
-  }, []);
-
-  const autoPlanSchedule = useCallback(async () => {
-    setPlanningSchedule(true);
-    setError(null);
-    try {
-      await tournamentApi.autoScheduleGroupMatches(scheduleStartDate);
-      await loadAll();
-      setSuccessMessage("Otomatik takvim oluşturuldu.");
-    } catch (e) {
-      setError(String(e));
-    } finally {
-      setPlanningSchedule(false);
-    }
-  }, [loadAll, scheduleStartDate]);
 
   const updateMatchSchedule = useCallback(
     async (input: {
@@ -609,14 +515,8 @@ export function useTournamentApp() {
     }
   }, [loadAll]);
 
-  const hasDraw = groups.length > 0;
   const teamCount = teams.length;
-  const canDraw = teamCount === 10;
   const finishedMatches = matches.filter((m) => m.status === "finished").length;
-  const groupMatches = matches
-    .filter((m) => m.stage === "group")
-    .sort((a, b) => (a.scheduled_date ?? "").localeCompare(b.scheduled_date ?? "") || a.calendar_slot - b.calendar_slot);
-  const knockoutMatches = matches.filter((m) => m.stage !== "group");
   const upcomingMatches = matches
     .filter((m) => m.status !== "finished")
     .slice(0, 6);
@@ -655,7 +555,6 @@ export function useTournamentApp() {
     deletingTeam,
     deletingMember,
     drawRunning,
-    adjustingGroups,
     planningSchedule,
     teamPendingDelete,
     memberPendingDelete,
@@ -687,23 +586,11 @@ export function useTournamentApp() {
     askDeleteMember,
     cancelDeleteMember,
     confirmDeleteMember,
-    runDrawAction,
-    runLeagueDrawAction,
     resetAllAction,
     resetTeamsAction,
-    moveGroupTeam,
-    regenerateFixturesAction,
-    updateDailyLimit,
-    scheduleStartDate,
-    setScheduleStartDate,
-    autoPlanSchedule,
     updateMatchSchedule,
-    hasDraw,
-    canDraw,
     finishedMatches,
     teamCount,
-    groupMatches,
-    knockoutMatches,
     matchSheetId,
     selectedMatch,
     openMatch,

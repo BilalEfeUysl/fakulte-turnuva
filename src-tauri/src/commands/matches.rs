@@ -5,6 +5,8 @@ use crate::models::{
 };
 use rusqlite::params;
 
+const MANUEL_GROUP: &str = "Manuel";
+
 
 
 #[tauri::command]
@@ -19,15 +21,15 @@ pub fn add_match(db: tauri::State<DbConn>, payload: CreateMatchPayload) -> Resul
     let conn = db.0.lock().map_err(|e| e.to_string())?;
 
     let group_id: i64 = match conn.query_row(
-        "SELECT id FROM groups WHERE name = 'Manuel'",
-        [],
+        "SELECT id FROM groups WHERE name = ?1",
+        params![MANUEL_GROUP],
         |r| r.get(0),
     ) {
         Ok(id) => id,
         Err(_) => {
             conn.execute(
-                "INSERT INTO groups (name, sort_order) VALUES ('Manuel', 99)",
-                [],
+                "INSERT INTO groups (name, sort_order) VALUES (?1, 99)",
+                params![MANUEL_GROUP],
             )
             .map_err(|e| e.to_string())?;
             conn.last_insert_rowid()
@@ -359,7 +361,24 @@ pub fn reset_match(db: tauri::State<DbConn>, match_id: i64) -> Result<(), String
 pub fn delete_match(db: tauri::State<DbConn>, match_id: i64) -> Result<(), String> {
     let mut conn = db.0.lock().map_err(|e| e.to_string())?;
     let tx = conn.transaction().map_err(|e| e.to_string())?;
-    tx.execute("DELETE FROM match_events WHERE match_id = ?1", params![match_id]).map_err(|e| e.to_string())?;
+
+    let stage: String = tx
+        .query_row("SELECT stage FROM matches WHERE id = ?1", params![match_id], |r| r.get(0))
+        .map_err(|e| e.to_string())?;
+
+    // Cascade delete downstream knockout stages (match_events deleted via ON DELETE CASCADE)
+    match stage.as_str() {
+        "Playoff" => {
+            tx.execute("DELETE FROM matches WHERE stage IN ('Yarı Final', 'Final')", [])
+                .map_err(|e| e.to_string())?;
+        }
+        "Yarı Final" | "semi" => {
+            tx.execute("DELETE FROM matches WHERE stage IN ('Final', 'final')", [])
+                .map_err(|e| e.to_string())?;
+        }
+        _ => {}
+    }
+
     tx.execute("DELETE FROM matches WHERE id = ?1", params![match_id]).map_err(|e| e.to_string())?;
     tx.commit().map_err(|e| e.to_string())
 }

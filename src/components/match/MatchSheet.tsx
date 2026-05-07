@@ -14,6 +14,7 @@ export function MatchSheet({ app }: Props) {
     savingMatch,
     saveMatchScores,
     resetMatchAction,
+    deleteMatchAction,
     matchEvents,
     loadingMatchEvents,
     addEvent,
@@ -32,6 +33,7 @@ export function MatchSheet({ app }: Props) {
   const [scheduledTime, setScheduledTime] = useState("");
   const [dateSavedFeedback, setDateSavedFeedback] = useState(false);
   const [confirmReset, setConfirmReset] = useState(false);
+  const [confirmDelete, setConfirmDelete] = useState(false);
 
   useEffect(() => {
     if (!selectedMatch) return;
@@ -128,7 +130,11 @@ export function MatchSheet({ app }: Props) {
                   type="number"
                   min={0}
                   value={home}
-                  onChange={(e) => setHome(Number(e.target.value) || 0)}
+                  onChange={(e) => {
+                    const v = Number(e.target.value) || 0;
+                    setHome(v);
+                    if (status === "scheduled" && (v > 0 || away > 0)) setStatus("finished");
+                  }}
                   className="arena-input match-sheet__score-input"
                 />
               </div>
@@ -141,7 +147,11 @@ export function MatchSheet({ app }: Props) {
                   type="number"
                   min={0}
                   value={away}
-                  onChange={(e) => setAway(Number(e.target.value) || 0)}
+                  onChange={(e) => {
+                    const v = Number(e.target.value) || 0;
+                    setAway(v);
+                    if (status === "scheduled" && (home > 0 || v > 0)) setStatus("finished");
+                  }}
                   className="arena-input match-sheet__score-input"
                 />
               </div>
@@ -196,16 +206,53 @@ export function MatchSheet({ app }: Props) {
                   </button>
                 </div>
               </div>
+            ) : confirmDelete ? (
+              <div style={{ marginTop: "1rem", background: "rgba(255,77,77,0.1)", border: "1px solid rgba(255,77,77,0.35)", borderRadius: "10px", padding: "0.85rem 1rem" }}>
+                <p style={{ margin: "0 0 0.75rem", fontSize: "0.85rem", color: "#ff4d4d", fontWeight: 600 }}>
+                  Maç ve tüm olay kayıtları tamamen silinecek! Emin misiniz?
+                </p>
+                <div style={{ display: "flex", gap: "0.5rem" }}>
+                  <button
+                    type="button"
+                    className="btn-arena"
+                    style={{ flex: 1, background: "#ff4d4d", color: "#fff", fontSize: "0.85rem" }}
+                    disabled={savingMatch}
+                    onClick={() => { setConfirmDelete(false); void deleteMatchAction(); }}
+                  >
+                    {savingMatch ? "Siliniyor…" : "Evet, Sil"}
+                  </button>
+                  <button
+                    type="button"
+                    className="ghost"
+                    style={{ flex: 1, fontSize: "0.85rem" }}
+                    disabled={savingMatch}
+                    onClick={() => setConfirmDelete(false)}
+                  >
+                    İptal
+                  </button>
+                </div>
+              </div>
             ) : (
-              <button
-                type="button"
-                className="ghost"
-                style={{ width: "100%", marginTop: "1rem", color: "#ff4d4d", fontSize: "0.85rem", fontWeight: 600, border: "1px solid rgba(255,77,77,0.2)", borderRadius: "8px", padding: "0.5rem" }}
-                disabled={savingMatch}
-                onClick={() => setConfirmReset(true)}
-              >
-                🗑️ Maçı Sıfırla
-              </button>
+              <div style={{ display: "flex", gap: "0.75rem", marginTop: "1rem" }}>
+                <button
+                  type="button"
+                  className="ghost"
+                  style={{ flex: 1, color: "#ff4d4d", fontSize: "0.85rem", fontWeight: 600, border: "1px solid rgba(255,77,77,0.2)", borderRadius: "8px", padding: "0.5rem" }}
+                  disabled={savingMatch}
+                  onClick={() => setConfirmReset(true)}
+                >
+                  🔄 Maçı Sıfırla
+                </button>
+                <button
+                  type="button"
+                  className="ghost"
+                  style={{ flex: 1, color: "#ff4d4d", fontSize: "0.85rem", fontWeight: 600, border: "1px solid rgba(255,77,77,0.2)", borderRadius: "8px", padding: "0.5rem" }}
+                  disabled={savingMatch}
+                  onClick={() => setConfirmDelete(true)}
+                >
+                  🗑️ Maçı Sil
+                </button>
+              </div>
             )}
           </section>
 
