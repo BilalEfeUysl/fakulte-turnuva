@@ -81,19 +81,30 @@ export function MembersPanel({
               {selected.faculty_name && selected.faculty_name !== selected.name ? (
                 <p className="team-detail__faculty">{selected.faculty_name}</p>
               ) : null}
-              {selected.manager_name ? (
-                <p className="team-detail__faculty" style={{ marginTop: "0.25rem" }}>
-                  Sorumlu: {selected.manager_name}
-                  {selected.manager_phone ? (
-                    <> · <a href={`tel:${selected.manager_phone}`} style={{ color: "inherit" }}>{selected.manager_phone}</a></>
-                  ) : null}
-                  {selected.manager_email ? (
-                    <> · <a href={`mailto:${selected.manager_email}`} style={{ color: "inherit" }}>{selected.manager_email}</a></>
-                  ) : null}
-                </p>
-              ) : null}
             </div>
           </div>
+          {(selected.manager_name || selected.manager_phone || selected.manager_email) && (
+            <div className="team-manager">
+              <span className="team-manager__label">Sorumlu</span>
+              <div className="team-manager__info">
+                {selected.manager_name && (
+                  <span className="team-manager__name">{selected.manager_name}</span>
+                )}
+                <div className="team-manager__links">
+                  {selected.manager_phone && (
+                    <a href={`tel:${selected.manager_phone}`} className="team-manager__link">
+                      {selected.manager_phone}
+                    </a>
+                  )}
+                  {selected.manager_email && (
+                    <a href={`mailto:${selected.manager_email}`} className="team-manager__link">
+                      {selected.manager_email}
+                    </a>
+                  )}
+                </div>
+              </div>
+            </div>
+          )}
           <div className="row-actions members-toolbar">
             <button type="button" className="ghost" onClick={() => onEditTeam(selected)} disabled={freezeForm}>
               Takımı düzenle
