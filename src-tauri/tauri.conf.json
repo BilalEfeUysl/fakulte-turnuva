@@ -16,7 +16,8 @@
         "title": "Fakülteler Arası Turnuva",
         "width": 1024,
         "height": 768,
-        "resizable": true
+        "resizable": true,
+        "theme": "Dark"
       }
     ],
     "security": {
