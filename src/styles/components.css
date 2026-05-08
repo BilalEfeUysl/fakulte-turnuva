@@ -144,11 +144,22 @@ select {
   background-position: right 0.75rem center;
   padding-right: 2.25rem;
   cursor: pointer;
+  color-scheme: dark;
 }
 
 select option {
-  background: var(--surface-elevated);
-  color: var(--text);
+  background: #1a2438;
+  color: #f4f7fb;
+}
+
+@media (prefers-color-scheme: light) {
+  select {
+    color-scheme: light;
+  }
+  select option {
+    background: #ffffff;
+    color: #0f172a;
+  }
 }
 
 input::placeholder,
