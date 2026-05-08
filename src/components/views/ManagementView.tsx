@@ -1,5 +1,8 @@
 import { useState } from "react";
+import { save, open } from "@tauri-apps/plugin-dialog";
+import { writeTextFile, readTextFile } from "@tauri-apps/plugin-fs";
 import { TeamFormPanel } from "../teams/TeamFormPanel";
+import { exportData, importData, type BackupBundle } from "../../api/backup";
 import type { TournamentAppState } from "../../hooks/useTournamentApp";
 import type { MatchStage } from "../../types/tournament";
 
@@ -16,6 +19,8 @@ export function ManagementView({ app }: Props) {
   const [matchTime, setMatchTime] = useState("");
   const [saving, setSaving] = useState(false);
   const [pendingReset, setPendingReset] = useState<PendingReset | null>(null);
+  const [pendingImport, setPendingImport] = useState(false);
+  const [ioBusy, setIoBusy] = useState<"export" | "import" | null>(null);
 
   const handleAddMatch = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -41,6 +46,44 @@ export function ManagementView({ app }: Props) {
     }
   };
 
+  const handleExport = async () => {
+    setIoBusy("export");
+    try {
+      const bundle = await exportData();
+      const date = new Date().toISOString().slice(0, 10);
+      const filePath = await save({
+        defaultPath: `fakulte-turnuva-yedek-${date}.json`,
+        filters: [{ name: "JSON", extensions: ["json"] }],
+      });
+      if (!filePath) return;
+      await writeTextFile(filePath, JSON.stringify(bundle, null, 2));
+    } catch (e) {
+      alert("Dışa aktarma hatası: " + String(e));
+    } finally {
+      setIoBusy(null);
+    }
+  };
+
+  const handleConfirmImport = async () => {
+    setPendingImport(false);
+    setIoBusy("import");
+    try {
+      const selected = await open({
+        multiple: false,
+        filters: [{ name: "JSON", extensions: ["json"] }],
+      });
+      if (!selected) return;
+      const text = await readTextFile(selected as string);
+      const bundle: BackupBundle = JSON.parse(text);
+      await importData(bundle);
+      window.location.reload();
+    } catch (e) {
+      alert("İçe aktarma hatası: " + String(e));
+    } finally {
+      setIoBusy(null);
+    }
+  };
+
   const handleConfirmReset = async () => {
     if (pendingReset === "tournament") {
       await app.resetAllAction();
@@ -53,6 +96,37 @@ export function ManagementView({ app }: Props) {
   return (
     <div>
       <h2 style={{ margin: "0 0 1rem", fontSize: "1.35rem", fontWeight: 800 }}>Yönetim</h2>
+
+      {pendingImport && (
+        <div style={{
+          background: "var(--color-danger, #ef4444)",
+          color: "#fff",
+          borderRadius: "0.75rem",
+          padding: "1rem 1.25rem",
+          marginBottom: "1.25rem",
+          display: "flex",
+          alignItems: "center",
+          gap: "1rem",
+          flexWrap: "wrap",
+        }}>
+          <span style={{ flex: 1, fontWeight: 600 }}>
+            Mevcut tüm veriler dosyadakilerle değiştirilecek. Devam edilsin mi?
+          </span>
+          <div style={{ display: "flex", gap: "0.5rem" }}>
+            <button
+              className="primary"
+              style={{ background: "#fff", color: "#ef4444", fontWeight: 700 }}
+              onClick={handleConfirmImport}
+              disabled={!!ioBusy}
+            >
+              Evet, içe aktar
+            </button>
+            <button onClick={() => setPendingImport(false)} disabled={!!ioBusy}>
+              İptal
+            </button>
+          </div>
+        </div>
+      )}
 
       {pendingReset && (
         <div style={{
@@ -198,6 +272,36 @@ export function ManagementView({ app }: Props) {
       </div>
 
       <div style={{ marginTop: "1.5rem", display: "flex", gap: "0.75rem", flexWrap: "wrap", alignItems: "center" }}>
+        <button
+          style={{
+            background: "transparent",
+            border: "1.5px solid var(--color-accent, #14b8a6)",
+            color: "var(--color-accent, #14b8a6)",
+            borderRadius: "0.5rem",
+            padding: "0.5rem 1rem",
+            fontWeight: 600,
+            cursor: "pointer",
+          }}
+          disabled={!!ioBusy || app.drawRunning || !!pendingReset || pendingImport}
+          onClick={handleExport}
+        >
+          {ioBusy === "export" ? "Aktarılıyor…" : "Dışa Aktar"}
+        </button>
+        <button
+          style={{
+            background: "var(--color-accent, #14b8a6)",
+            border: "none",
+            color: "#fff",
+            borderRadius: "0.5rem",
+            padding: "0.5rem 1rem",
+            fontWeight: 600,
+            cursor: "pointer",
+          }}
+          disabled={!!ioBusy || app.drawRunning || !!pendingReset || pendingImport}
+          onClick={() => setPendingImport(true)}
+        >
+          {ioBusy === "import" ? "Yükleniyor…" : "İçe Aktar"}
+        </button>
         <div style={{ flex: 1 }}></div>
         <button
           style={{

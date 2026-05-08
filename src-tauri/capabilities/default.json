@@ -7,9 +7,20 @@
     "core:default",
     "dialog:default",
     "dialog:allow-save",
+    "dialog:allow-open",
     "fs:default",
     {
-      "identifier": "fs:allow-write-file",
+      "identifier": "fs:allow-write-text-file",
+      "allow": [
+        { "path": "$DOWNLOAD/**" },
+        { "path": "$DESKTOP/**" },
+        { "path": "$DOCUMENT/**" },
+        { "path": "$PICTURE/**" },
+        { "path": "$HOME/**" }
+      ]
+    },
+    {
+      "identifier": "fs:allow-read-text-file",
       "allow": [
         { "path": "$DOWNLOAD/**" },
         { "path": "$DESKTOP/**" },

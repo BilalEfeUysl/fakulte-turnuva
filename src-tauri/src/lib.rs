@@ -49,6 +49,8 @@ pub fn run() {
             commands::stats::get_team_summaries,
             commands::stats::get_player_summary,
             commands::stats::get_team_players_summary,
+            commands::backup::export_data,
+            commands::backup::import_data,
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");
