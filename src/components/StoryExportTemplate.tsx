@@ -552,7 +552,7 @@ function TopScorersStory({ scorers, teamById, bgSrc }: { scorers: TopScorerRow[]
             letterSpacing: "-0.03em",
           }}
         >
-          GOL KRALLIGI
+          GOL KRALLIĞI
         </div>
         <div
           style={{
@@ -591,7 +591,7 @@ function TopScorersStory({ scorers, teamById, bgSrc }: { scorers: TopScorerRow[]
         <div
           style={{
             display: "grid",
-            gridTemplateColumns: "70px 1fr 110px",
+            gridTemplateColumns: "80px 1fr 200px 110px",
             alignItems: "center",
             padding: "0 28px 22px",
             borderBottom: "1px solid rgba(255,255,255,0.2)",
@@ -604,6 +604,7 @@ function TopScorersStory({ scorers, teamById, bgSrc }: { scorers: TopScorerRow[]
         >
           <div>#</div>
           <div>OYUNCU</div>
+          <div>TAKIM</div>
           <div style={{ textAlign: "right" }}>GOL</div>
         </div>
 
@@ -612,12 +613,13 @@ function TopScorersStory({ scorers, teamById, bgSrc }: { scorers: TopScorerRow[]
           {rows.map((s, i) => {
             const isLeader = i === 0;
             const team = teamById.get(s.team_id);
+            const medalEmoji = s.rank === 1 ? "🥇" : s.rank === 2 ? "🥈" : s.rank === 3 ? "🥉" : null;
             return (
               <div
                 key={`${s.player_name}-${s.team_id}`}
                 style={{
                   display: "grid",
-                  gridTemplateColumns: "70px 1fr 110px",
+                  gridTemplateColumns: "80px 1fr 200px 110px",
                   alignItems: "center",
                   padding: "16px 28px",
                   borderRadius: 16,
@@ -625,8 +627,10 @@ function TopScorersStory({ scorers, teamById, bgSrc }: { scorers: TopScorerRow[]
                   color: isLeader ? "#172554" : "#ffffff",
                 }}
               >
-                <div style={{ fontWeight: 900, fontSize: 28, fontFamily: MONO }}>{s.rank}.</div>
-                <div style={{ display: "flex", flexDirection: "column", gap: 5, overflow: "hidden" }}>
+                <div style={{ fontWeight: 900, fontSize: medalEmoji ? 34 : 28, fontFamily: MONO }}>
+                  {medalEmoji ?? `${s.rank}.`}
+                </div>
+                <div style={{ overflow: "hidden" }}>
                   <span
                     style={{
                       fontWeight: 900,
@@ -635,14 +639,17 @@ function TopScorersStory({ scorers, teamById, bgSrc }: { scorers: TopScorerRow[]
                       overflow: "hidden",
                       textOverflow: "ellipsis",
                       whiteSpace: "nowrap",
+                      display: "block",
                     }}
                   >
                     {s.player_name}
                   </span>
-                  <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
-                    <SmallCircle team={team} name={s.team_name} size={28} />
-                    <span style={{ fontSize: 20, fontWeight: 600, opacity: 0.65 }}>{s.team_name}</span>
-                  </div>
+                </div>
+                <div style={{ display: "flex", alignItems: "center", gap: 10, overflow: "hidden" }}>
+                  <SmallCircle team={team} name={s.team_name} size={28} />
+                  <span style={{ fontSize: 20, fontWeight: 600, opacity: 0.65, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+                    {s.team_name}
+                  </span>
                 </div>
                 <div style={{ textAlign: "right" }}>
                   <div style={{ fontWeight: 900, fontSize: 46, fontFamily: MONO, lineHeight: 1 }}>{s.goals}</div>
