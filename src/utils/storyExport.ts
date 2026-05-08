@@ -1,6 +1,6 @@
 import { createElement } from "react";
 import { createRoot } from "react-dom/client";
-import html2canvas from "html2canvas";
+import { toPng } from "html-to-image";
 import { save } from "@tauri-apps/plugin-dialog";
 import { writeFile } from "@tauri-apps/plugin-fs";
 import {
@@ -12,7 +12,7 @@ import {
 
 // Load the background image via the browser's Image API (same-origin, no CORS
 // headers required) and draw it to an offscreen canvas to get a data URL.
-// Data URLs are opaque to html2canvas's security model — no taint, no fetch.
+// Data URLs are opaque to html-to-image's security model — no taint, no fetch.
 let bgDataUrlCache: string | null = null;
 
 function loadBgDataUrl(): Promise<string> {
@@ -34,7 +34,6 @@ function loadBgDataUrl(): Promise<string> {
       }
     };
     img.onerror = () => resolve("/assets/background_image.png");
-    // No crossOrigin attribute — same-origin images draw to canvas without taint
     img.src = "/assets/background_image.png";
   });
 }
@@ -70,10 +69,6 @@ function defaultFileName(data: StoryData): string {
   }
 }
 
-async function nextPaint(): Promise<void> {
-  await new Promise<void>((r) => requestAnimationFrame(() => requestAnimationFrame(() => r())));
-}
-
 export type StoryExportResult = { saved: boolean; path?: string };
 
 export async function exportStoryImage(data: StoryData): Promise<StoryExportResult> {
@@ -82,11 +77,10 @@ export async function exportStoryImage(data: StoryData): Promise<StoryExportResu
   const host = document.createElement("div");
   host.style.cssText = [
     "position:fixed",
-    "top:0",
-    "left:0",
+    "top:-9999px",
+    "left:-9999px",
     `width:${STORY_WIDTH}px`,
     `height:${STORY_HEIGHT}px`,
-    "opacity:0.01",
     "pointer-events:none",
     "z-index:99999",
     "overflow:hidden",
@@ -96,25 +90,16 @@ export async function exportStoryImage(data: StoryData): Promise<StoryExportResu
   const root = createRoot(host);
   try {
     root.render(createElement(StoryExportTemplate, { data, bgImageDataUrl }));
-    await nextPaint();
-    await nextPaint();
 
-    const canvas = await html2canvas(host, {
+    await document.fonts.ready;
+    await new Promise<void>((resolve) => setTimeout(resolve, 800));
+
+    const dataUrl = await toPng(host, {
       width: STORY_WIDTH,
       height: STORY_HEIGHT,
-      scale: 1,
-      useCORS: false,
-      allowTaint: true,
-      backgroundColor: null,
-      logging: false,
-      imageTimeout: 15000,
-      x: 0,
-      y: 0,
-      scrollX: 0,
-      scrollY: 0,
+      pixelRatio: 1,
+      cacheBust: false,
     });
-
-    const dataUrl = canvas.toDataURL("image/png");
 
     const filePath = await save({
       defaultPath: defaultFileName(data),
