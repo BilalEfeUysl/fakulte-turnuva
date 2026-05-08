@@ -7,6 +7,9 @@ on:
       - master
   workflow_dispatch:
 
+permissions:
+  contents: write
+
 jobs:
   build-tauri:
     runs-on: windows-2022
@@ -40,6 +43,9 @@ jobs:
       - name: Install dependencies
         run: npm install
 
+      - name: Build frontend
+        run: npm run build
+
       - name: Build Tauri App
         uses: tauri-apps/tauri-action@v0
         env:
@@ -50,3 +56,4 @@ jobs:
           releaseBody: "Bu sürüm GitHub Actions tarafından otomatik oluşturuldu."
           releaseDraft: true
           prerelease: false
+          args: --target x86_64-pc-windows-msvc --verbose
