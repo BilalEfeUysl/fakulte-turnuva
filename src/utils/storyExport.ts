@@ -10,31 +10,20 @@ import {
   type StoryData,
 } from "../components/StoryExportTemplate";
 
-// Load the background image via the browser's Image API (same-origin, no CORS
-// headers required) and draw it to an offscreen canvas to get a data URL.
-// Data URLs are opaque to html-to-image's security model — no taint, no fetch.
 let bgDataUrlCache: string | null = null;
 
-function loadBgDataUrl(): Promise<string> {
-  if (bgDataUrlCache) return Promise.resolve(bgDataUrlCache);
-  return new Promise<string>((resolve) => {
-    const img = new Image();
-    img.onload = () => {
-      try {
-        const c = document.createElement("canvas");
-        c.width = img.naturalWidth;
-        c.height = img.naturalHeight;
-        const ctx = c.getContext("2d");
-        if (!ctx) { resolve("/assets/background_image.png"); return; }
-        ctx.drawImage(img, 0, 0);
-        bgDataUrlCache = c.toDataURL("image/jpeg", 0.90);
-        resolve(bgDataUrlCache);
-      } catch {
-        resolve("/assets/background_image.png");
-      }
+async function loadBgDataUrl(): Promise<string> {
+  if (bgDataUrlCache) return bgDataUrlCache;
+  const response = await fetch("/assets/background_image.png");
+  const blob = await response.blob();
+  return new Promise<string>((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onload = () => {
+      bgDataUrlCache = reader.result as string;
+      resolve(bgDataUrlCache);
     };
-    img.onerror = () => resolve("/assets/background_image.png");
-    img.src = "/assets/background_image.png";
+    reader.onerror = reject;
+    reader.readAsDataURL(blob);
   });
 }
 
@@ -74,18 +63,27 @@ export type StoryExportResult = { saved: boolean; path?: string };
 export async function exportStoryImage(data: StoryData): Promise<StoryExportResult> {
   const bgImageDataUrl = await loadBgDataUrl();
 
+  const wrapper = document.createElement("div");
+  wrapper.style.cssText = [
+    "position:fixed",
+    "top:0",
+    "left:0",
+    "width:0",
+    "height:0",
+    "overflow:hidden",
+    "z-index:99999",
+    "pointer-events:none",
+  ].join(";");
+
   const host = document.createElement("div");
   host.style.cssText = [
-    "position:fixed",
-    "top:-9999px",
-    "left:-9999px",
     `width:${STORY_WIDTH}px`,
     `height:${STORY_HEIGHT}px`,
-    "pointer-events:none",
-    "z-index:99999",
     "overflow:hidden",
   ].join(";");
-  document.body.appendChild(host);
+
+  wrapper.appendChild(host);
+  document.body.appendChild(wrapper);
 
   const root = createRoot(host);
   try {
@@ -94,12 +92,16 @@ export async function exportStoryImage(data: StoryData): Promise<StoryExportResu
     await document.fonts.ready;
     await new Promise<void>((resolve) => setTimeout(resolve, 800));
 
-    const dataUrl = await toPng(host, {
+    const toPngOptions = {
       width: STORY_WIDTH,
       height: STORY_HEIGHT,
       pixelRatio: 1,
       cacheBust: false,
-    });
+    };
+
+    // First call warms up the WebKit/WebView2 renderer (fixes shadows-only bug)
+    await toPng(host, toPngOptions);
+    const dataUrl = await toPng(host, toPngOptions);
 
     const filePath = await save({
       defaultPath: defaultFileName(data),
@@ -113,6 +115,6 @@ export async function exportStoryImage(data: StoryData): Promise<StoryExportResu
     return { saved: true, path: filePath };
   } finally {
     root.unmount();
-    host.remove();
+    wrapper.remove();
   }
 }
