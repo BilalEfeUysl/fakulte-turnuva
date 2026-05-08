@@ -46,6 +46,10 @@ export function resetMatch(matchId: number): Promise<void> {
   return invoke<void>("reset_match", { matchId });
 }
 
+export function deleteMatch(matchId: number): Promise<void> {
+  return invoke<void>("delete_match", { matchId });
+}
+
 export function addMatch(input: {
   homeTeamId: number;
   awayTeamId: number;

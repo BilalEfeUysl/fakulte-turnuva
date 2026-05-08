@@ -56,3 +56,7 @@ export function resetAll(): Promise<void> {
 export function resetTeams(): Promise<void> {
   return invoke<void>("reset_teams");
 }
+
+export function generateGenelKnockouts(): Promise<void> {
+  return invoke<void>("generate_genel_knockouts");
+}
