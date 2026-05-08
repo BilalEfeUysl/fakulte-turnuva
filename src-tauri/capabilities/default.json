@@ -10,6 +10,16 @@
     "dialog:allow-open",
     "fs:default",
     {
+      "identifier": "fs:allow-write-file",
+      "allow": [
+        { "path": "$DOWNLOAD/**" },
+        { "path": "$DESKTOP/**" },
+        { "path": "$DOCUMENT/**" },
+        { "path": "$PICTURE/**" },
+        { "path": "$HOME/**" }
+      ]
+    },
+    {
       "identifier": "fs:allow-write-text-file",
       "allow": [
         { "path": "$DOWNLOAD/**" },
