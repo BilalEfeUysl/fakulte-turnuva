@@ -1922,16 +1922,6 @@ button.btn-arena.btn-arena--gold:hover:not(:disabled) {
 }
 
 /* Match card wrapper (allows story button below card without nested buttons) */
-.match-card-wrap {
-  display: flex;
-  flex-direction: column;
-  gap: 0.35rem;
-}
-
-.match-card-wrap__story {
-  display: flex;
-  justify-content: flex-end;
-}
 
 /* Match card */
 .match-card {

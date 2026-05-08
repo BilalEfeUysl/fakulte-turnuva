@@ -66,11 +66,8 @@ export async function exportStoryImage(data: StoryData): Promise<StoryExportResu
   const wrapper = document.createElement("div");
   wrapper.style.cssText = [
     "position:fixed",
-    "top:0",
-    "left:0",
-    "width:0",
-    "height:0",
-    "overflow:hidden",
+    "top:-9999px",
+    "left:-9999px",
     "z-index:99999",
     "pointer-events:none",
   ].join(";");
@@ -79,7 +76,6 @@ export async function exportStoryImage(data: StoryData): Promise<StoryExportResu
   host.style.cssText = [
     `width:${STORY_WIDTH}px`,
     `height:${STORY_HEIGHT}px`,
-    "overflow:hidden",
   ].join(";");
 
   wrapper.appendChild(host);
@@ -90,7 +86,20 @@ export async function exportStoryImage(data: StoryData): Promise<StoryExportResu
     root.render(createElement(StoryExportTemplate, { data, bgImageDataUrl }));
 
     await document.fonts.ready;
-    await new Promise<void>((resolve) => setTimeout(resolve, 800));
+    await new Promise<void>((resolve) => setTimeout(resolve, 400));
+
+    // Wait for all images (including bg data URL) to finish loading
+    const imgs = Array.from(host.querySelectorAll("img"));
+    await Promise.all(
+      imgs.map((img) =>
+        img.complete
+          ? Promise.resolve()
+          : new Promise<void>((res) => {
+              img.onload = () => res();
+              img.onerror = () => res();
+            })
+      )
+    );
 
     const toPngOptions = {
       width: STORY_WIDTH,

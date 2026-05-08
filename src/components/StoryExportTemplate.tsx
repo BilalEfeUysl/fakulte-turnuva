@@ -1,3 +1,4 @@
+import type { CSSProperties } from "react";
 import type { Team } from "../types/team";
 import type { GroupStandings, MatchRow, TopScorerRow } from "../types/tournament";
 import { initialsFromName } from "../utils/initials";
@@ -13,7 +14,6 @@ export type StoryData =
       type: "single_match_result";
       match: MatchRow;
       teamById: Map<number, Team>;
-      stageLabel?: string;
     }
   | {
       type: "standings";
@@ -124,24 +124,15 @@ function BgLayer({ overlay, bgSrc }: { overlay: string; bgSrc: string }) {
 function MatchResultStory({
   match,
   teamById,
-  stageLabel,
   bgSrc,
 }: {
   match: MatchRow;
   teamById: Map<number, Team>;
-  stageLabel?: string;
   bgSrc: string;
 }) {
   const home = teamById.get(match.home_team_id);
   const away = teamById.get(match.away_team_id);
   const finished = match.status === "finished";
-  const stage =
-    stageLabel ||
-    (match.group_name === "Lig"
-      ? "Lig Maçı"
-      : match.group_name === "Genel"
-        ? "Turnuva"
-        : `Grup ${match.group_name}`);
   const dateText = formatDateTr(match.scheduled_date, match.scheduled_time);
 
   return (
@@ -186,18 +177,6 @@ function MatchResultStory({
           }}
         >
           Fakülte <span style={{ color: "#60a5fa" }}>Turnuvası</span>
-        </div>
-        <div
-          style={{
-            marginTop: 14,
-            color: "rgba(255,255,255,0.5)",
-            fontSize: 22,
-            fontWeight: 600,
-            letterSpacing: "0.12em",
-            textTransform: "uppercase",
-          }}
-        >
-          {stage}
         </div>
       </div>
 
@@ -247,89 +226,92 @@ function MatchResultStory({
             </div>
           </div>
 
-          {/* Teams + Score */}
-          <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 12 }}>
-            {/* Home */}
-            <div style={{ flex: 1, display: "flex", flexDirection: "column", alignItems: "center", gap: 24 }}>
+          {/* Teams + Score — grid: ikonlar ve skor aynı satırda hizalı, isimler alt satırda */}
+          <div style={{ display: "grid", gridTemplateColumns: "1fr auto 1fr", rowGap: 28, columnGap: 12, alignItems: "center" }}>
+            {/* Satır 1: ikonlar + skor */}
+            <div style={{ display: "flex", justifyContent: "center" }}>
               <TeamCircle team={home} name={match.home_team_name} size={220} />
-              <div
-                style={{
-                  color: "#ffffff",
-                  fontSize: 36,
-                  fontWeight: 900,
-                  textAlign: "center",
-                  lineHeight: 1.15,
-                  letterSpacing: "-0.02em",
-                  textTransform: "uppercase",
-                }}
-              >
-                {match.home_team_name}
-              </div>
             </div>
 
-            {/* Score */}
-            {finished ? (
-              <div style={{ display: "flex", alignItems: "center", gap: 12, flexShrink: 0 }}>
-                <div
-                  style={{
-                    color: "#ffffff",
-                    fontSize: 190,
-                    fontWeight: 900,
-                    lineHeight: 1,
-                    fontFamily: MONO,
-                    filter: "drop-shadow(0 8px 20px rgba(0,0,0,0.6))",
-                    letterSpacing: "-0.06em",
-                  }}
-                >
-                  {match.home_score}
+            {finished ? (() => {
+              const isDoubleDigit = Math.max(match.home_score ?? 0, match.away_score ?? 0) >= 10;
+              const scoreFontSize = isDoubleDigit ? 110 : 150;
+              return (
+                <div style={{ display: "flex", alignItems: "center", gap: 16 }}>
+                  <div
+                    style={{
+                      width: 164,
+                      height: 164,
+                      display: "flex",
+                      alignItems: "center",
+                      justifyContent: "center",
+                      background: "rgba(255,255,255,0.08)",
+                      borderRadius: 32,
+                      border: "2px solid rgba(255,255,255,0.18)",
+                      boxShadow: "0 12px 32px rgba(0,0,0,0.35)",
+                    }}
+                  >
+                    <span style={{ color: "#ffffff", fontSize: scoreFontSize, fontWeight: 900, lineHeight: 1, fontFamily: FONT }}>
+                      {match.home_score}
+                    </span>
+                  </div>
+                  <span style={{ color: "#60a5fa", fontSize: 56, fontWeight: 900, lineHeight: 1 }}>:</span>
+                  <div
+                    style={{
+                      width: 164,
+                      height: 164,
+                      display: "flex",
+                      alignItems: "center",
+                      justifyContent: "center",
+                      background: "rgba(255,255,255,0.08)",
+                      borderRadius: 32,
+                      border: "2px solid rgba(255,255,255,0.18)",
+                      boxShadow: "0 12px 32px rgba(0,0,0,0.35)",
+                    }}
+                  >
+                    <span style={{ color: "#ffffff", fontSize: scoreFontSize, fontWeight: 900, lineHeight: 1, fontFamily: FONT }}>
+                      {match.away_score}
+                    </span>
+                  </div>
                 </div>
-                <div style={{ width: 28, height: 10, background: "#60a5fa", borderRadius: 999 }} />
-                <div
-                  style={{
-                    color: "#ffffff",
-                    fontSize: 190,
-                    fontWeight: 900,
-                    lineHeight: 1,
-                    fontFamily: MONO,
-                    filter: "drop-shadow(0 8px 20px rgba(0,0,0,0.6))",
-                    letterSpacing: "-0.06em",
-                  }}
-                >
-                  {match.away_score}
-                </div>
-              </div>
-            ) : (
-              <div
-                style={{
-                  color: "#60a5fa",
-                  fontSize: 90,
-                  fontWeight: 900,
-                  lineHeight: 1,
-                  fontFamily: MONO,
-                  letterSpacing: "-0.04em",
-                  flexShrink: 0,
-                }}
-              >
+              );
+            })() : (
+              <div style={{ color: "#60a5fa", fontSize: 90, fontWeight: 900, lineHeight: 1, fontFamily: MONO, letterSpacing: "-0.04em", textAlign: "center" }}>
                 VS
               </div>
             )}
 
-            {/* Away */}
-            <div style={{ flex: 1, display: "flex", flexDirection: "column", alignItems: "center", gap: 24 }}>
+            <div style={{ display: "flex", justifyContent: "center" }}>
               <TeamCircle team={away} name={match.away_team_name} size={220} />
-              <div
-                style={{
-                  color: "#ffffff",
-                  fontSize: 36,
-                  fontWeight: 900,
-                  textAlign: "center",
-                  lineHeight: 1.15,
-                  letterSpacing: "-0.02em",
-                  textTransform: "uppercase",
-                }}
-              >
-                {match.away_team_name}
-              </div>
+            </div>
+
+            {/* Satır 2: isimler */}
+            <div
+              style={{
+                color: "#ffffff",
+                fontSize: 34,
+                fontWeight: 900,
+                textAlign: "center",
+                lineHeight: 1.15,
+                letterSpacing: "-0.02em",
+                textTransform: "uppercase",
+              }}
+            >
+              {match.home_team_name}
+            </div>
+            <div />
+            <div
+              style={{
+                color: "#ffffff",
+                fontSize: 34,
+                fontWeight: 900,
+                textAlign: "center",
+                lineHeight: 1.15,
+                letterSpacing: "-0.02em",
+                textTransform: "uppercase",
+              }}
+            >
+              {match.away_team_name}
             </div>
           </div>
         </div>
@@ -373,13 +355,7 @@ function StandingsStory({
   bgSrc: string;
 }) {
   const rows = group.rows.slice(0, 10);
-  const title =
-    groupLabel ||
-    (group.group_name === "Genel"
-      ? "Tüm Takımlar"
-      : group.group_name === "Lig"
-        ? "Lig"
-        : `Grup ${group.group_name}`);
+  void groupLabel;
 
   return (
     <div style={{ position: "relative", overflow: "hidden", fontFamily: FONT, width: STORY_WIDTH, height: STORY_HEIGHT }}>
@@ -419,7 +395,7 @@ function StandingsStory({
             opacity: 0.85,
           }}
         >
-          {title} · {todayTr()}
+          {todayTr()}
         </div>
       </div>
 
@@ -427,10 +403,9 @@ function StandingsStory({
       <div
         style={{
           position: "absolute",
-          top: 480,
+          top: 440,
           left: 40,
           right: 40,
-          bottom: 96,
           zIndex: 10,
           background: "rgba(0,0,0,0.60)",
           border: "1px solid rgba(255,255,255,0.12)",
@@ -465,10 +440,16 @@ function StandingsStory({
         </div>
 
         {/* Rows */}
-        <div style={{ display: "flex", flexDirection: "column", gap: 6, marginTop: 14, flex: 1, overflow: "hidden" }}>
-          {rows.map((r, i) => {
-            const isLeader = i === 0;
+        <div style={{ display: "flex", flexDirection: "column", gap: 6, marginTop: 14 }}>
+          {rows.map((r) => {
             const team = teamById.get(r.team_id);
+            const isSf = r.rank <= 2;
+            const isPo = r.rank >= 3 && r.rank <= 6;
+            const rankBadgeStyle: CSSProperties = isSf
+              ? { background: "rgba(96,165,250,0.22)", color: "#60a5fa", border: "2px solid rgba(96,165,250,0.55)", borderRadius: 10, width: 44, height: 44, display: "flex", alignItems: "center", justifyContent: "center", fontWeight: 900, fontSize: 24, fontFamily: MONO }
+              : isPo
+              ? { background: "rgba(245,158,11,0.18)", color: "#f59e0b", border: "2px solid rgba(245,158,11,0.45)", borderRadius: 10, width: 44, height: 44, display: "flex", alignItems: "center", justifyContent: "center", fontWeight: 900, fontSize: 24, fontFamily: MONO }
+              : { color: "rgba(255,255,255,0.45)", fontWeight: 900, fontSize: 24, fontFamily: MONO, width: 44, display: "flex", alignItems: "center" };
             return (
               <div
                 key={r.team_id}
@@ -476,13 +457,15 @@ function StandingsStory({
                   display: "grid",
                   gridTemplateColumns: "70px 1fr 90px 90px 90px 110px",
                   alignItems: "center",
-                  padding: "18px 28px",
+                  padding: "14px 28px",
                   borderRadius: 16,
-                  background: isLeader ? "#ffffff" : "transparent",
-                  color: isLeader ? "#172554" : "#ffffff",
+                  background: "transparent",
+                  color: "#ffffff",
                 }}
               >
-                <div style={{ fontWeight: 900, fontSize: 28, fontFamily: MONO }}>{r.rank}.</div>
+                <div style={{ display: "flex", alignItems: "center" }}>
+                  <div style={rankBadgeStyle}>{r.rank}</div>
+                </div>
                 <div style={{ display: "flex", alignItems: "center", gap: 16, overflow: "hidden" }}>
                   <SmallCircle team={team} name={r.team_name} size={42} />
                   <span
@@ -706,7 +689,7 @@ export function StoryExportTemplate({ data, bgImageDataUrl }: { data: StoryData;
   const bgSrc = bgImageDataUrl ?? "/assets/background_image.png";
   switch (data.type) {
     case "single_match_result":
-      return <MatchResultStory match={data.match} teamById={data.teamById} stageLabel={data.stageLabel} bgSrc={bgSrc} />;
+      return <MatchResultStory match={data.match} teamById={data.teamById} bgSrc={bgSrc} />;
     case "standings":
       return <StandingsStory group={data.group} teamById={data.teamById} groupLabel={data.groupLabel} bgSrc={bgSrc} />;
     case "top_scorers":

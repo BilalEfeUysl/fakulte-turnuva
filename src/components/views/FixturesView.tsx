@@ -3,7 +3,6 @@ import type { MatchRow } from "../../types/tournament";
 import type { Team } from "../../types/team";
 import type { TournamentAppState } from "../../hooks/useTournamentApp";
 import { TeamBadge } from "../ui/TeamBadge";
-import { StoryExportButton } from "../ui/StoryExportButton";
 
 type Props = { app: TournamentAppState };
 
@@ -46,45 +45,29 @@ function MatchCard({ m, onOpen, variant = "group", teamById }: CardProps) {
   const home = teamById.get(m.home_team_id);
   const away = teamById.get(m.away_team_id);
   return (
-    <div className="match-card-wrap">
-      <button
-        type="button"
-        className={`match-card match-card--${variant}${finished ? " match-card--finished" : ""}`}
-        onClick={() => onOpen(m.id)}
-      >
-        <div className="match-card__datetime">{formatDate(m.scheduled_date, m.scheduled_time)}</div>
-        <div className="match-card__teams">
-          <span className="match-card__team match-card__team--home">
-            <span className="match-card__team-name">{m.home_team_name}</span>
-            <TeamBadge size="sm" color={home?.color} shortName={home?.short_name} name={m.home_team_name} />
-          </span>
-          <span className={`match-card__vs${finished ? " match-card__vs--score" : ""}`}>
-            {finished ? `${m.home_score} – ${m.away_score}` : "VS"}
-          </span>
-          <span className="match-card__team match-card__team--away">
-            <span className="match-card__team-name">{m.away_team_name}</span>
-            <TeamBadge size="sm" color={away?.color} shortName={away?.short_name} name={m.away_team_name} />
-          </span>
-        </div>
-        <div className="match-card__action">
-          {finished ? "✏️ Skoru Güncelle" : "⚽ Skor Gir"}
-        </div>
-      </button>
-      {finished && (
-        <div className="match-card-wrap__story">
-          <StoryExportButton
-            size="sm"
-            label="Sonucu Paylaş"
-            title="Bu maç sonucunu Instagram hikayesi olarak kaydet"
-            buildData={() => ({
-              type: "single_match_result",
-              match: m,
-              teamById,
-            })}
-          />
-        </div>
-      )}
-    </div>
+    <button
+      type="button"
+      className={`match-card match-card--${variant}${finished ? " match-card--finished" : ""}`}
+      onClick={() => onOpen(m.id)}
+    >
+      <div className="match-card__datetime">{formatDate(m.scheduled_date, m.scheduled_time)}</div>
+      <div className="match-card__teams">
+        <span className="match-card__team match-card__team--home">
+          <span className="match-card__team-name">{m.home_team_name}</span>
+          <TeamBadge size="sm" color={home?.color} shortName={home?.short_name} name={m.home_team_name} />
+        </span>
+        <span className={`match-card__vs${finished ? " match-card__vs--score" : ""}`}>
+          {finished ? `${m.home_score} – ${m.away_score}` : "VS"}
+        </span>
+        <span className="match-card__team match-card__team--away">
+          <span className="match-card__team-name">{m.away_team_name}</span>
+          <TeamBadge size="sm" color={away?.color} shortName={away?.short_name} name={m.away_team_name} />
+        </span>
+      </div>
+      <div className="match-card__action">
+        {finished ? "✏️ Skoru Güncelle" : "⚽ Skor Gir"}
+      </div>
+    </button>
   );
 }
 
